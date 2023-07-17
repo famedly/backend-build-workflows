@@ -1,5 +1,5 @@
 echo "Setting up rust development environment"
-echo "CARGO_HOME=${CARGO_HOME}" >> "$GITHUB_ENV"
+echo "CARGO_HOME=$(pwd)/${CARGO_HOME}" >> "$GITHUB_ENV"
 mkdir -p ${CARGO_HOME}
 apt-get install -yqq --no-install-recommends ${ADDITIONAL_PACKAGES}
 echo "[net]" >> ${CARGO_HOME}/config.toml
