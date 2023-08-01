@@ -1,0 +1,110 @@
+on:
+  workflow_call:
+    inputs:
+      registry:
+        required: false
+        type: string
+        default: docker.nexus.famedly.de
+
+      # Name of service. Empty for root service, needs to be unique for services from subfolders. 
+      # Will be used as a last part of container path and matched with version tags
+      name:
+        required: false
+        type: string
+        default: ""
+
+      path:
+        required: false
+        type: string
+        default: "."
+        
+      repository:
+        required: false
+        type: string
+        default: ${{ github.repository }}
+      
+      registry_user:
+        required: false
+        type: string
+        default: famedly-ci
+env:
+  RUSTC_WRAPPER: cachepot
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest-16core
+    env:
+      # conditionally adds '/' if inputs.name isn't empty (https://github.com/orgs/community/discussions/25725)
+      IMAGE_NAME: "${{ inputs.registry }}/${{ inputs.repository }}${{ inputs.name && '/' || '' }}${{ inputs.name }}"
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check settings
+        if: inputs.path != '.' && inputs.name == '' || inputs.path == '.' && inputs.name != ''
+        run: |
+          echo "Both 'path' and 'name' inputs need to be set together"
+          exit 1
+
+      - name: Build container
+        run: |
+          docker build --pull -t build_image -t "${IMAGE_NAME}:${{ github.sha }}" \
+          -f "${{ inputs.path }}/Dockerfile" . \
+          --build-arg CARGO_REGISTRIES_FAMEDLY_INDEX="${{ vars.CARGO_REGISTRIES_FAMEDLY_INDEX }}" \
+          --build-arg KTRA_CARGO_TOKEN="${{ secrets.CRATE_REGISTRY_TOKEN }}" \
+          --build-arg GIT_CRATE_INDEX_USER="${{ secrets.GITLAB_USER }}" \
+          --build-arg GIT_CRATE_INDEX_PASS="${{ secrets.GITLAB_PASS }}" \
+          --build-arg AWS_ACCESS_KEY_ID="${{ secrets.CACHEPOT_AWS_ACCESS_KEY_ID }}" \
+          --build-arg AWS_SECRET_ACCESS_KEY="${{ secrets.CACHEPOT_AWS_SECRET_ACCESS_KEY }}" \
+          --build-arg AWS_REGION="${{ vars.CACHEPOT_AWS_REGION }}" \
+          --build-arg CACHEPOT_BUCKET="${{ vars.CACHEPOT_BUCKET }}" \
+          --build-arg RUSTC_WRAPPER="${{ env.RUSTC_WRAPPER }}" \
+          --build-arg CARGO_BUILD_RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS}" \
+          --build-arg CI_SSH_PRIVATE_KEY="${{ secrets.CI_SSH_PRIVATE_KEY }}"
+      
+      - name: Tag for root services
+        # Run if we are working on root Dockerfile for tags
+        if: github.ref_type == 'tag' && inputs.path == '.'
+        run: |
+          # If tag contains only a version string, tag a new release         
+          if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            docker tag build_image "${IMAGE_NAME}:${{ github.ref_name }}"
+            docker tag build_image "${IMAGE_NAME}:latest"
+          # If tag contains a version string, but also some characters after it (beta version / RC / etc.)
+          elif [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            docker tag build_image "${IMAGE_NAME}:${{ github.ref_name }}"
+          # If tag doesn't contain any version string at all, tag the image with the tag
+          elif ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            docker tag build_image "${IMAGE_NAME}:${{ github.ref_name }}"
+          fi
+          # The rest will be version tags that are tagged for different service from monorepo
+
+      - name: Subfolder tag
+        # Run for subfolder services
+        if: github.ref_type == 'tag' &&  inputs.path != '.'
+        run: |          
+          # If it's a version tag for specific service, tag it with version
+          if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            VERSION=`echo "${{ github.ref_name }}" | sed -r "s/^${{ inputs.name }}-([0-9]+.[0-9]+.[0-9]+.*)$/\1/"`
+            docker tag build_image "${IMAGE_NAME}:${VERSION}"
+          # If it doesn't contain any version string, use it as-is
+          elif ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            docker tag build_image "${IMAGE_NAME}:${{ github.ref_name }}"
+          fi
+
+          # If it's a version tag without any additional release candidate / beta string etc., tag a latest release
+          if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            docker tag build_image "${IMAGE_NAME}:latest"
+          fi          
+
+# The rest will be version tags that are tagged for different service from monorepo
+
+      - name: Log into registry ${{ inputs.registry }}
+        uses: famedly/login-action@v2
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry_user }}
+          password: ${{ secrets.registry_password || secrets.GITHUB_TOKEN }}
+
+      - name: Publish
+        run: |
+          docker image push --all-tags "${IMAGE_NAME}"

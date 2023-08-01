@@ -1,0 +1,26 @@
+name: Docker test
+
+on:
+  push:
+    branches: ["*"]
+    tags: ["*"]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  test_root:
+    uses: ./.github/workflows/docker-backend.yml
+    secrets: inherit
+  test_subfolder:
+    uses: ./.github/workflows/docker-backend.yml
+    with:
+      path: subfolder
+      name: subfolder
+    secrets: inherit
+  test_subsubfolder:
+    uses: ./.github/workflows/docker-backend.yml
+    with:
+      path: subfolder/subsubfolder
+      name: meow
+    secrets: inherit
+
