@@ -1,26 +1,38 @@
 name: Rust
 
+# Trigger the CI on any tags, pushes to any branch and PRs to any branch.
 on:
   push:
     branches: [ "*" ]
+    tags: [ "*" ]
   pull_request:
     branches: [ "*" ]
 
+# Make sure there is no pipeline running uselessly.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Environment variables for all jobs.
 env:
   CARGO_TERM_COLOR: always
+  ADDITIONAL_PACKAGES: ""
 
+# Defined CI jobs.
 jobs:
-  build:
-
+  check:
     runs-on: ubuntu-latest-16core
     container: ghcr.io/famedly/rust-container:nightly
     steps:
     - uses: actions/checkout@v3
+    
     - uses: ./.github/actions/rust-prepare
       with:
+        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
         gitlab_user: ${{ secrets.GITLAB_USER }}
         gitlab_pass: ${{ secrets.GITLAB_PASS }}
-        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
+        additional_packages: ${{ env.ADDITIONAL_PACKAGES }}
+
     - name: Check
       run: |
         cargo +${NIGHTLY_VERSION} fmt -- --check
@@ -28,5 +40,6 @@ jobs:
         cargo llvm-cov nextest --workspace --ignore-filename-regex "cargo_home.*"
         cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose
         cargo +${NIGHTLY_VERSION} udeps
+
     - name: Build
       run: cargo build --verbose --release

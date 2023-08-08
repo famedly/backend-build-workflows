@@ -5,9 +5,18 @@ inputs:
     description: "SSH socket"
     default: "/tmp/ssh_agent.sock"
     required: true
+  gitlab_ssh:
+    description: "Gitlab ssh"
+    required: true
+  gitlab_user:
+    description: "Gitlab username"
+    required: true
+  gitlab_pass:
+    description: "Gitlab username"
+    required: true
   cargo_home:
     description: "Cargo home"
-    default: "cargo_home"
+    default: ".cargo"
   famedly_crates_registry:
     description: "Famedly registry name"
     default: "famedly"
@@ -17,37 +26,26 @@ inputs:
   additional_packages:
     description: "Additional package to install during preparation"
     default: ""
-  gitlab_user:
-    description: "Gitlab username"
-    required: true
-  gitlab_pass:
-    description: "Gitlab username"
-    required: true
-  gitlab_ssh:
-    description: "Gitlab ssh"
-    required: true
 
 runs:
   using: "composite"
   steps:
-    - run: ls -lah
-      shell: bash
-    - run: $GITHUB_ACTION_PATH/prepare_ssh.sh
+    - shell: bash
       env:
         SSH_AUTH_SOCK: ${{ inputs.ssh_auth_sock }}
         GITLAB_SSH: ${{ inputs.gitlab_ssh }}
-      shell: bash
+      run: $GITHUB_ACTION_PATH/prepare_ssh.sh
 
-    - run: $GITHUB_ACTION_PATH/prepare_git.sh
+    - shell: bash
       env:
         GITLAB_USER: ${{ inputs.gitlab_user }}
         GITLAB_PASS: ${{ inputs.gitlab_pass }}
-      shell: bash
+      run: $GITHUB_ACTION_PATH/prepare_git.sh
 
-    - run: $GITHUB_ACTION_PATH/prepare_rust.sh
+    - shell: bash
       env:
         CARGO_HOME: ${{ inputs.cargo_home }}
         ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
         FAMEDLY_CRATES_REGISTRY: ${{ inputs.famedly_crates_registry }}
         FAMEDLY_CRATES_REGISTRY_INDEX: ${{ inputs.famedly_crates_registry_index }}
-      shell: bash
+      run: $GITHUB_ACTION_PATH/prepare_rust.sh

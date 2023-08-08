@@ -1,8 +1,20 @@
-echo "Setting up rust development environment"
-echo "CARGO_HOME=$(pwd)/${CARGO_HOME}" >> "$GITHUB_ENV"
-mkdir -p ${CARGO_HOME}
-apt-get install -yqq --no-install-recommends ${ADDITIONAL_PACKAGES}
-echo "[net]" >> ${CARGO_HOME}/config.toml
-echo "git-fetch-with-cli = true" >> ${CARGO_HOME}/config.toml
-echo "[registries.${FAMEDLY_CRATES_REGISTRY}]" >> ${CARGO_HOME}/config.toml
-echo "index = \"${FAMEDLY_CRATES_REGISTRY_INDEX}\"" >> ${CARGO_HOME}/config.toml
+# If we are root, there is no sudo command (needed). Makes sure we can run inside a docker container and outside.
+if [[ "$(id -u)" -eq 0 ]]; then
+	SUDO=""
+else
+	SUDO="sudo"
+fi
+
+echo "Installing additional packages: ${ADDITIONAL_PACKAGES}"
+$SUDO apt-get install -yqq --no-install-recommends ${ADDITIONAL_PACKAGES}
+
+echo "Setting up development environment"
+echo "CARGO_HOME = ${HOME}/${CARGO_HOME}"
+mkdir -p ${HOME}/${CARGO_HOME}
+echo "[net]" >> ${HOME}/${CARGO_HOME}/config.toml
+echo "git-fetch-with-cli = true" >> ${HOME}/${CARGO_HOME}/config.toml
+echo "[registries.${FAMEDLY_CRATES_REGISTRY}]" >> ${HOME}/${CARGO_HOME}/config.toml
+echo "index = \"${FAMEDLY_CRATES_REGISTRY_INDEX}\"" >> ${HOME}/${CARGO_HOME}/config.toml
+echo "CARGO_HOME=${HOME}/${CARGO_HOME}" >> "$GITHUB_ENV"
+
+echo "Preparations finished"
