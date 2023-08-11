@@ -22,3 +22,13 @@ pub fn hello_world() {
 	let _ = time::now();
 	println!("Hello, world!")
 }
+
+/// This function is not covered by tests for coverage checking
+/// # Panics
+/// Just panics, that's all.
+pub fn untested_function_for_coverage() {
+	println!(
+		"I'm sure this part of code just works and can't horribly fail, so I just left it untested"
+	);
+	panic!()
+}
