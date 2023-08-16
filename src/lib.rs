@@ -19,7 +19,7 @@
 
 /// Write a hello world message
 pub fn hello_world() {
-	let _ = time::now();
+	let _ = time::Instant::now();
 	println!("Hello, world!")
 }
 
