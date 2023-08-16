@@ -84,7 +84,7 @@ jobs:
         run: |          
           # If it's a version tag for specific service, tag it with version
           if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            VERSION=`echo "${{ github.ref_name }}" | sed -r "s/^${{ inputs.name }}-([0-9]+.[0-9]+.[0-9]+.*)$/\1/"`
+            VERSION=`echo "${{ github.ref_name }}" | sed -r "s/^${{ inputs.name }}-v([0-9]+.[0-9]+.[0-9]+.*)$/\1/"`
             docker tag build_image "${IMAGE_NAME}:${VERSION}"
           # If it doesn't contain any version string, use it as-is
           elif ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
