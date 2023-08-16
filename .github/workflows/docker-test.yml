@@ -11,6 +11,8 @@ jobs:
   test_root:
     uses: ./.github/workflows/docker-backend.yml
     secrets: inherit
+    with:
+      name: backend_build_workflows
   test_subfolder:
     uses: ./.github/workflows/docker-backend.yml
     with:

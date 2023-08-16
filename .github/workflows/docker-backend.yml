@@ -4,24 +4,21 @@ on:
       registry:
         required: false
         type: string
+        # docker.nexus.famedly.de is the private container registry
+        # for public registry set input to docker-oss.nexus.famedly.de
         default: docker.nexus.famedly.de
 
-      # Name of service. Empty for root service, needs to be unique for services from subfolders. 
-      # Will be used as a last part of container path and matched with version tags
+      # Name of service.
+      # Will be used as a last part of container path 
+      # and matched with version tags if path is specified
       name:
-        required: false
+        required: true
         type: string
-        default: ""
-
+      
       path:
         required: false
         type: string
         default: "."
-        
-      repository:
-        required: false
-        type: string
-        default: ${{ github.repository }}
       
       registry_user:
         required: false
@@ -34,20 +31,13 @@ jobs:
   docker:
     runs-on: ubuntu-latest-16core
     env:
-      # conditionally adds '/' if inputs.name isn't empty (https://github.com/orgs/community/discussions/25725)
-      IMAGE_NAME: "${{ inputs.registry }}/${{ inputs.repository }}${{ inputs.name && '/' || '' }}${{ inputs.name }}"
+      IMAGE_PATH: "${{ inputs.registry }}/backend/${{ inputs.name }}"
     steps:
       - uses: actions/checkout@v3
 
-      - name: Check settings
-        if: inputs.path != '.' && inputs.name == '' || inputs.path == '.' && inputs.name != ''
-        run: |
-          echo "Both 'path' and 'name' inputs need to be set together"
-          exit 1
-
       - name: Build container
         run: |
-          docker build --pull -t build_image -t "${IMAGE_NAME}:${{ github.sha }}" \
+          docker build --pull -t build_image -t "${IMAGE_PATH}:${{ github.sha }}" \
           -f "${{ inputs.path }}/Dockerfile" . \
           --build-arg CARGO_REGISTRIES_FAMEDLY_INDEX="${{ vars.CARGO_REGISTRIES_FAMEDLY_INDEX }}" \
           --build-arg KTRA_CARGO_TOKEN="${{ secrets.CRATE_REGISTRY_TOKEN }}" \
@@ -67,14 +57,14 @@ jobs:
         run: |
           # If tag contains only a version string, tag a new release         
           if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            docker tag build_image "${IMAGE_NAME}:${{ github.ref_name }}"
-            docker tag build_image "${IMAGE_NAME}:latest"
+            docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
+            docker tag build_image "${IMAGE_PATH}:latest"
           # If tag contains a version string, but also some characters after it (beta version / RC / etc.)
           elif [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            docker tag build_image "${IMAGE_NAME}:${{ github.ref_name }}"
+            docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
           # If tag doesn't contain any version string at all, tag the image with the tag
           elif ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            docker tag build_image "${IMAGE_NAME}:${{ github.ref_name }}"
+            docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
           fi
           # The rest will be version tags that are tagged for different service from monorepo
 
@@ -85,15 +75,15 @@ jobs:
           # If it's a version tag for specific service, tag it with version
           if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
             VERSION=`echo "${{ github.ref_name }}" | sed -r "s/^${{ inputs.name }}-v([0-9]+.[0-9]+.[0-9]+.*)$/\1/"`
-            docker tag build_image "${IMAGE_NAME}:${VERSION}"
+            docker tag build_image "${IMAGE_PATH}:${VERSION}"
           # If it doesn't contain any version string, use it as-is
           elif ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            docker tag build_image "${IMAGE_NAME}:${{ github.ref_name }}"
+            docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
           fi
 
           # If it's a version tag without any additional release candidate / beta string etc., tag a latest release
           if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            docker tag build_image "${IMAGE_NAME}:latest"
+            docker tag build_image "${IMAGE_PATH}:latest"
           fi          
 
 # The rest will be version tags that are tagged for different service from monorepo
@@ -107,4 +97,4 @@ jobs:
 
       - name: Publish
         run: |
-          docker image push --all-tags "${IMAGE_NAME}"
+          docker image push --all-tags "${IMAGE_PATH}"

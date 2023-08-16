@@ -70,14 +70,14 @@ jobs:
 
     - name: Pull base
       uses: actions/checkout@v3
-      if: github.event_name == 'pull_request' && steps.cache-primes.outputs.cache-hit != 'true'
+      if: github.event_name == 'pull_request' && steps.cache-coverage.outputs.cache-hit != 'true'
       with:
         ref: ${{ github.event.pull_request.base.ref }}
         repository: ${{ github.event.pull_request.base.full_name }}
         path: base   
 
     - name: Generate base coverage
-      if: github.event_name == 'pull_request' && steps.cache-primes.outputs.cache-hit != 'true'
+      if: github.event_name == 'pull_request' && steps.cache-coverage.outputs.cache-hit != 'true'
       working-directory: base
       run:
         cargo llvm-cov nextest --workspace --lcov --output-path $GITHUB_WORKSPACE/old-cov.lcov
