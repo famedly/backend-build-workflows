@@ -36,6 +36,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build container
+        shell: bash
         run: |
           docker build --pull -t build_image -t "${IMAGE_PATH}:${{ github.sha }}" \
           -f "${{ inputs.path }}/Dockerfile" . \
@@ -50,10 +51,21 @@ jobs:
           --build-arg RUSTC_WRAPPER="${{ env.RUSTC_WRAPPER }}" \
           --build-arg CARGO_BUILD_RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS}" \
           --build-arg CI_SSH_PRIVATE_KEY="${{ secrets.CI_SSH_PRIVATE_KEY }}"
-      
+
+      - name: Branches
+        # Run for branches for both subfolders and root.
+        if: github.ref_type == 'branch'
+        shell: bash
+        run: |
+          # Always tag the branch name of all services. Use the head_ref for PRs, ref for branches.
+          # Replace / by - in branch names.
+          REF_NAME=`echo "${{ github.head_ref || github.ref }}" | sed -r "s|^refs/heads/(.*)$|\1|" | sed -r "s|/|-|g"`
+          docker tag build_image "${IMAGE_PATH}:${REF_NAME}"
+
       - name: Tag for root services
         # Run if we are working on root Dockerfile for tags
         if: github.ref_type == 'tag' && inputs.path == '.'
+        shell: bash
         run: |
           # If tag contains only a version string, tag a new release         
           if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -71,6 +83,7 @@ jobs:
       - name: Subfolder tag
         # Run for subfolder services
         if: github.ref_type == 'tag' &&  inputs.path != '.'
+        shell: bash
         run: |          
           # If it's a version tag for specific service, tag it with version
           if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
@@ -85,8 +98,7 @@ jobs:
           if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             docker tag build_image "${IMAGE_PATH}:latest"
           fi          
-
-# The rest will be version tags that are tagged for different service from monorepo
+          # The rest will be version tags that are tagged for different service from monorepo
 
       - name: Log into registry ${{ inputs.registry }}
         uses: famedly/login-action@v2
@@ -96,5 +108,6 @@ jobs:
           password: ${{ secrets.registry_password || secrets.GITHUB_TOKEN }}
 
       - name: Publish
+        shell: bash
         run: |
           docker image push --all-tags "${IMAGE_PATH}"

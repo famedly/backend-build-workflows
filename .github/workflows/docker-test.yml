@@ -12,17 +12,17 @@ jobs:
     uses: ./.github/workflows/docker-backend.yml
     secrets: inherit
     with:
-      name: backend_build_workflows
+      name: backend_build_workflows_root
   test_subfolder:
     uses: ./.github/workflows/docker-backend.yml
     with:
       path: subfolder
-      name: subfolder
+      name: backend_build_workflows_subfolder
     secrets: inherit
   test_subsubfolder:
     uses: ./.github/workflows/docker-backend.yml
     with:
       path: subfolder/subsubfolder
-      name: meow
+      name: backend_build_workflows_meow
     secrets: inherit
 
