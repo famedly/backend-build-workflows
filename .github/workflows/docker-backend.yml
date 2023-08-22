@@ -31,7 +31,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest-16core
     env:
-      IMAGE_PATH: "${{ inputs.registry }}/backend/${{ inputs.name }}"
+      IMAGE_PATH: "${{ inputs.registry }}/${{ inputs.name }}"
     steps:
       - uses: actions/checkout@v3
 
