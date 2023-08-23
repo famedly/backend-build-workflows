@@ -11,6 +11,8 @@ jobs:
   publish:
     uses: ./.github/workflows/docker-backend.yml
     secrets: inherit
+    with:
+      name: bar # name of service
 ```
 
 should take care of everything
@@ -21,8 +23,8 @@ should take care of everything
 jobs:
   publish:
     uses: ./.github/workflows/docker-backend.yml
+    secrets: inherit
     with:
       path: ./foo/bar # path to where the Dockerfile resides
       name: bar # name of service
-    secrets: inherit
 ```
