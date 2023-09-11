@@ -11,7 +11,7 @@ on:
 # Environment variables for all jobs.
 env:
   CARGO_TERM_COLOR: always
-  ADDITIONAL_PACKAGES: ""
+  ADDITIONAL_PACKAGES: "jq"
 
 # Defined CI jobs.
 jobs:
@@ -49,7 +49,8 @@ jobs:
     
     - name: Doc-test
       working-directory: head
-      run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose
+      # Don't run doc-tests for binary crates
+      run: cargo metadata --format-version 1 --no-deps | jq '.packages[].targets[].crate_types[] | select(. == "lib")' -e && cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose
 
     - name: Udeps
       working-directory: head
