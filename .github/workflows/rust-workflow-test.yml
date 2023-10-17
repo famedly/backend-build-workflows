@@ -7,7 +7,7 @@ on:
 
 # Make sure there is no pipeline running uselessly.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-a # -a should be removed, just for separate workflows in this repository
   cancel-in-progress: true
 
 # Environment variables for all jobs.
