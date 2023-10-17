@@ -1,12 +1,11 @@
 on:
   workflow_call:
     inputs:
-      registry:
+      # Whether the project in question is open-source and releases should be published on the public container registry
+      oss:
         required: false
-        type: string
-        # docker.nexus.famedly.de is the private container registry
-        # for public registry set input to docker-oss.nexus.famedly.de
-        default: docker.nexus.famedly.de
+        type: boolean
+        default: false
 
       # Name of service.
       # Will be used as a last part of container path 
@@ -26,19 +25,20 @@ on:
         default: famedly-ci
 env:
   RUSTC_WRAPPER: cachepot
+  REGISTRY_SNAPSHOTS: docker-nightly.nexus.famedly.de
+  REGISTRY_RELEASES: docker-releases.nexus.famedly.de
+  REGISTRY_OSS: docker-oss.nexus.famedly.de
 
 jobs:
   docker:
     runs-on: ubuntu-latest-16core
-    env:
-      IMAGE_PATH: "${{ inputs.registry }}/${{ inputs.name }}"
     steps:
       - uses: actions/checkout@v3
 
       - name: Build container
         shell: bash
         run: |
-          docker build --pull -t build_image -t "${IMAGE_PATH}:${{ github.sha }}" \
+          docker build --pull -t build_image \
           -f "${{ inputs.path }}/Dockerfile" . \
           --build-arg CARGO_REGISTRIES_FAMEDLY_INDEX="${{ vars.CARGO_REGISTRIES_FAMEDLY_INDEX }}" \
           --build-arg KTRA_CARGO_TOKEN="${{ secrets.CRATE_REGISTRY_TOKEN }}" \
@@ -57,57 +57,91 @@ jobs:
         if: github.ref_type == 'branch'
         shell: bash
         run: |
+          IMAGE_PATH=${{ env.REGISTRY_SNAPSHOTS }}/${{ inputs.name }}
           # Always tag the branch name of all services. Use the head_ref for PRs, ref for branches.
           # Replace / by - in branch names.
           REF_NAME=`echo "${{ github.head_ref || github.ref }}" | sed -r "s|^refs/heads/(.*)$|\1|" | sed -r "s|/|-|g"`
           docker tag build_image "${IMAGE_PATH}:${REF_NAME}"
+          docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
+          echo "REGISTRY=${{ env.REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
 
       - name: Tag for root services
         # Run if we are working on root Dockerfile for tags
         if: github.ref_type == 'tag' && inputs.path == '.'
         shell: bash
         run: |
+          if [[ ${{ inputs.oss }} ]]; then
+            IMAGE_PATH=${{ env.REGISTRY_OSS }}/${{ inputs.name }}
+            echo "REGISTRY=${{ env.REGISTRY_OSS }}" >> $GITHUB_ENV
+          else
+            IMAGE_PATH=${{ env.REGISTRY_RELEASES }}/${{ inputs.name }}
+            echo "REGISTRY=${{ env.REGISTRY_RELEASES }}" >> $GITHUB_ENV
+          fi
+
           # If tag contains only a version string, tag a new release         
           if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
             docker tag build_image "${IMAGE_PATH}:latest"
+            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
+
           # If tag contains a version string, but also some characters after it (beta version / RC / etc.)
           elif [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
             docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
-          # If tag doesn't contain any version string at all, tag the image with the tag
+            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
+
+          # If tag doesn't contain any version string at all, tag the image with the tag (for e.g. nightly/weekly snapshots).
           elif ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            IMAGE_PATH=${{ env.REGISTRY_SNAPSHOTS }}/${{ inputs.name }}
             docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
+            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
+            echo "REGISTRY=${{ env.REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
           fi
+
           # The rest will be version tags that are tagged for different service from monorepo
 
       - name: Subfolder tag
         # Run for subfolder services
         if: github.ref_type == 'tag' &&  inputs.path != '.'
         shell: bash
-        run: |          
+        run: |
           # If it's a version tag for specific service, tag it with version
           if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            if [[ ${{ inputs.oss }} ]]; then
+              IMAGE_PATH=${{ env.REGISTRY_OSS }}/${{ inputs.name }}
+              echo "REGISTRY=${{ env.REGISTRY_OSS }}" >> $GITHUB_ENV
+            else
+              IMAGE_PATH=${{ env.REGISTRY_RELEASES }}/${{ inputs.name }}
+              echo "REGISTRY=${{ env.REGISTRY_RELEASES }}" >> $GITHUB_ENV
+            fi
+
             VERSION=`echo "${{ github.ref_name }}" | sed -r "s/^${{ inputs.name }}-(v[0-9]+.[0-9]+.[0-9]+.*)$/\1/"`
             docker tag build_image "${IMAGE_PATH}:${VERSION}"
-          # If it doesn't contain any version string, use it as-is
+            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
+
+            # If it's a version tag without any additional release candidate / beta string etc., tag a latest release
+            if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              docker tag build_image "${IMAGE_PATH}:latest"
+            fi
+
+          # If it doesn't contain any version string, use it as-is (for e.g. nightly/weekly snapshots).
           elif ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            IMAGE_PATH=${{ env.REGISTRY_SNAPSHOTS }}/${{ inputs.name }}
             docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
+            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
+            echo "REGISTRY=${{ env.REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
           fi
 
-          # If it's a version tag without any additional release candidate / beta string etc., tag a latest release
-          if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            docker tag build_image "${IMAGE_PATH}:latest"
-          fi          
           # The rest will be version tags that are tagged for different service from monorepo
 
-      - name: Log into registry ${{ inputs.registry }}
+      - name: Log into registry ${{ env.REGISTRY }}
         uses: famedly/login-action@v2
         with:
-          registry: ${{ inputs.registry }}
+          registry: ${{ env.REGISTRY }}
           username: ${{ inputs.registry_user }}
           password: ${{ secrets.registry_password || secrets.GITHUB_TOKEN }}
 
       - name: Publish
         shell: bash
         run: |
+          IMAGE_PATH=${{ env.REGISTRY }}/${{ inputs.name }}
           docker image push --all-tags "${IMAGE_PATH}"
