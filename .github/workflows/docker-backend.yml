@@ -70,7 +70,7 @@ jobs:
         if: github.ref_type == 'tag' && inputs.path == '.'
         shell: bash
         run: |
-          if [[ ${{ inputs.oss }} ]]; then
+          if [[ ${{ inputs.oss }} == true ]]; then
             IMAGE_PATH=${{ env.REGISTRY_OSS }}/${{ inputs.name }}
             echo "REGISTRY=${{ env.REGISTRY_OSS }}" >> $GITHUB_ENV
           else
@@ -106,7 +106,7 @@ jobs:
         run: |
           # If it's a version tag for specific service, tag it with version
           if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            if [[ ${{ inputs.oss }} ]]; then
+            if [[ ${{ inputs.oss }} == true ]]; then
               IMAGE_PATH=${{ env.REGISTRY_OSS }}/${{ inputs.name }}
               echo "REGISTRY=${{ env.REGISTRY_OSS }}" >> $GITHUB_ENV
             else
