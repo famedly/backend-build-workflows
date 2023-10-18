@@ -49,6 +49,7 @@ jobs:
       run: cargo lints clippy --workspace --all-targets -- -D warnings
     
     - name: Test & Coverage
+      timeout-minutes: 20
       working-directory: head
       run: cargo llvm-cov nextest --workspace --lcov --output-path $GITHUB_WORKSPACE/new-cov.lcov
     
