@@ -134,6 +134,7 @@ jobs:
           # The rest will be version tags that are tagged for different service from monorepo
 
       - name: Log into registry ${{ env.REGISTRY }}
+        if: env.REGISTRY != null
         uses: famedly/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
@@ -141,6 +142,7 @@ jobs:
           password: ${{ secrets.registry_password || secrets.GITHUB_TOKEN }}
 
       - name: Publish
+        if: env.REGISTRY != null
         shell: bash
         run: |
           IMAGE_PATH=${{ env.REGISTRY }}/${{ inputs.name }}
