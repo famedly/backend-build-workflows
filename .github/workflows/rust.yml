@@ -29,8 +29,6 @@ jobs:
       - uses: ./.github/actions/rust-prepare
         with:
           gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
-          gitlab_user: ${{ secrets.GITLAB_USER }}
-          gitlab_pass: ${{ secrets.GITLAB_PASS }}
           additional_packages: ${{ env.ADDITIONAL_PACKAGES }}
 
       - name: Caching

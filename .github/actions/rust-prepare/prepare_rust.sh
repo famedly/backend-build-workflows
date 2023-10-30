@@ -1,3 +1,4 @@
+set -e
 # If we are root, there is no sudo command (needed). Makes sure we can run inside a docker container and outside.
 if [[ "$(id -u)" -eq 0 ]]; then
 	SUDO=""
