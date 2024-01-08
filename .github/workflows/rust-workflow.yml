@@ -41,30 +41,35 @@ jobs:
         workspaces: "head -> target"
 
     - name: Rustfmt
+      shell: bash
       working-directory: head
       run: cargo +${NIGHTLY_VERSION} fmt -- --check
 
     - name: Clippy
       working-directory: head
+      shell: bash
       run: cargo lints clippy --workspace --all-targets -- -D warnings
     
     - name: Test & Coverage
       timeout-minutes: 20
+      shell: bash
       working-directory: head
       run: cargo llvm-cov nextest --workspace --lcov --output-path $GITHUB_WORKSPACE/new-cov.lcov
     
     - name: Doc-test
+      shell: bash
       working-directory: head
       run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose
 
     - name: Udeps
+      shell: bash
       working-directory: head
       run: cargo +${NIGHTLY_VERSION} udeps
     
     - name: Typos
-      uses: crate-ci/typos@ef5fcf92dfbd679f97c0371159e143852f7b1eb1
-      with: 
-        files: ./head
+      shell: bash
+      working-directory: head
+      run: typos
 
     - name: Load base coverage results from cache
       if: github.event_name == 'pull_request'
@@ -84,9 +89,9 @@ jobs:
 
     - name: Generate base coverage
       if: github.event_name == 'pull_request' && steps.cache-coverage.outputs.cache-hit != 'true'
+      shell: bash
       working-directory: base
-      run:
-        cargo llvm-cov nextest --workspace --lcov --output-path $GITHUB_WORKSPACE/old-cov.lcov
+      run: cargo llvm-cov nextest --workspace --lcov --output-path $GITHUB_WORKSPACE/old-cov.lcov
   
     - name: Meow Coverage
       id: coverage-report
