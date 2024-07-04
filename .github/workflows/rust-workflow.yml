@@ -34,7 +34,7 @@ jobs:
         gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
         gitlab_user: ${{ secrets.GITLAB_USER }}
         gitlab_pass: ${{ secrets.GITLAB_PASS }}
-    
+
     - name: Caching
       uses: Swatinem/rust-cache@b8a6852b4f997182bdea832df3f9e153038b5191
       with:
@@ -48,14 +48,14 @@ jobs:
     - name: Clippy
       working-directory: head
       shell: bash
-      run: cargo lints clippy --workspace --all-targets -- -D warnings
-    
+      run: cargo clippy --workspace --all-targets -- -D warnings
+
     - name: Test & Coverage
       timeout-minutes: 20
       shell: bash
       working-directory: head
       run: cargo llvm-cov nextest --workspace --lcov --output-path $GITHUB_WORKSPACE/new-cov.lcov
-    
+
     - name: Doc-test
       shell: bash
       working-directory: head
@@ -65,7 +65,7 @@ jobs:
       shell: bash
       working-directory: head
       run: cargo +${NIGHTLY_VERSION} udeps
-    
+
     - name: Typos
       shell: bash
       working-directory: head
@@ -85,14 +85,14 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.base.ref }}
         repository: ${{ github.event.pull_request.base.full_name }}
-        path: base   
+        path: base
 
     - name: Generate base coverage
       if: github.event_name == 'pull_request' && steps.cache-coverage.outputs.cache-hit != 'true'
       shell: bash
       working-directory: base
       run: cargo llvm-cov nextest --workspace --lcov --output-path $GITHUB_WORKSPACE/old-cov.lcov
-  
+
     - name: Meow Coverage
       id: coverage-report
       uses: famedly/meow-coverage@main

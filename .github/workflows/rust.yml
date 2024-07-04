@@ -25,7 +25,7 @@ jobs:
     container: ghcr.io/famedly/rust-container:nightly
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: ./.github/actions/rust-prepare
         with:
           gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
@@ -42,7 +42,7 @@ jobs:
 
       - name: Clippy
         shell: bash
-        run: cargo lints clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Test & Coverage
         shell: bash
