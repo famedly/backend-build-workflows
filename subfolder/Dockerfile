@@ -1,2 +1,2 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 CMD ["/usr/local/bin/bash"]
