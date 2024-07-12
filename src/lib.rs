@@ -1,5 +1,4 @@
-//! TODO: crate documentation
-
+//! Crate for testing CI workflows
 #![deny(
 	trivial_casts,
 	trivial_numeric_casts,
@@ -16,11 +15,12 @@
 	clippy::missing_docs_in_private_items,
 	clippy::missing_panics_doc
 )]
+#![allow(clippy::print_stdout)]
 
 /// Write a hello world message
 pub fn hello_world() {
 	let _ = time::Instant::now();
-	println!("Hello, world!")
+	println!("Hello, world!");
 }
 
 /// This function is not covered by tests for coverage checking

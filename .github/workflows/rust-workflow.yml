@@ -48,8 +48,8 @@ jobs:
     - name: Clippy
       working-directory: head
       shell: bash
-      run: cargo clippy --workspace --all-targets -- -D warnings
-
+      run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets -- -D warnings
+    
     - name: Test & Coverage
       timeout-minutes: 20
       shell: bash
