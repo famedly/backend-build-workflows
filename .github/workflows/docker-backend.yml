@@ -23,15 +23,6 @@ on:
         required: false
         type: string
         default: famedly-ci
-      # Github Actions workflow inputs can't be lists, so this is probably the least bad way of doing this currently
-      build_amd64:
-        required: false
-        type: boolean
-        default: true
-      build_armv8:
-        required: false
-        type: boolean
-        default: false
 env:
   RUSTC_WRAPPER: cachepot
   REGISTRY_SNAPSHOTS: docker-nightly.nexus.famedly.de
@@ -39,16 +30,8 @@ env:
   REGISTRY_OSS: docker-oss.nexus.famedly.de
 
 jobs:
-  determine_platforms:
-    steps:
-      
-
   docker:
-    strategy:
-      matrix:
-        platform: [amd64, armv8]
-    runs-on: {{ }}
-    needs: [determine_platforms]
+    runs-on: ubuntu-latest-16core
     steps:
       - uses: actions/checkout@v3
 
