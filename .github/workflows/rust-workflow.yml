@@ -44,7 +44,7 @@ jobs:
     - name: Clippy
       working-directory: head
       shell: bash
-      run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets -- -D warnings
+      run: cargo clippy --workspace --all-targets -- -D warnings
 
     - name: Udeps
       shell: bash
