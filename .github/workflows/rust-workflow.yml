@@ -16,11 +16,6 @@ env:
 # Defined CI jobs.
 jobs:
   check:
-    # This is set explictly to allow Meow-Coverage to post comments in response to Dependabot PRs which have a read-only GITHUB_TOKEN by default
-    permissions:
-      pull-requests: write
-      issues: write
-      contents: read
     runs-on: ${{ inputs.runs-on }}
     container: ghcr.io/famedly/rust-container:nightly
     steps:
@@ -39,6 +34,7 @@ jobs:
       uses: Swatinem/rust-cache@b8a6852b4f997182bdea832df3f9e153038b5191
       with:
         workspaces: "head -> target"
+        cache-on-failure: true
 
     - name: Rustfmt
       shell: bash
@@ -49,17 +45,6 @@ jobs:
       working-directory: head
       shell: bash
       run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets -- -D warnings
-    
-    - name: Test
-      timeout-minutes: 20
-      shell: bash
-      working-directory: head
-      run: cargo nextest run --workspace
-
-    - name: Doc-test
-      shell: bash
-      working-directory: head
-      run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose
 
     - name: Udeps
       shell: bash
@@ -71,3 +56,50 @@ jobs:
       working-directory: head
       run: typos
 
+
+  test:
+    runs-on: ${{ inputs.runs-on }}
+    container: ghcr.io/famedly/rust-container:nightly
+    steps:
+    - name: Checkout current repository
+      uses: actions/checkout@v3
+      with:
+        path: head
+
+    - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main
+      with:
+        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
+        gitlab_user: ${{ secrets.GITLAB_USER }}
+        gitlab_pass: ${{ secrets.GITLAB_PASS }}
+
+    - name: Caching
+      uses: Swatinem/rust-cache@b8a6852b4f997182bdea832df3f9e153038b5191
+      with:
+        workspaces: "head -> target"
+        cache-on-failure: true
+        # Turn this on if your test isn't running in a container
+        # cache-all-crates: true
+
+    - name: Test
+      timeout-minutes: 20
+      shell: bash
+      working-directory: head
+      run: cargo llvm-cov --no-report nextest --no-fail-fast --workspace
+
+    - name: Doc-test
+      shell: bash
+      working-directory: head
+      # Nextest doesn't support doctests, so we need to run this separately
+      run: cargo +${NIGHTLY_VERSION} llvm-cov --no-report --doc --workspace --verbose
+
+    - name: Merge coverage
+      shell: bash
+      working-directory: head
+      run: |
+        cargo +${NIGHTLY_VERSION} llvm-cov report --doctests --lcov --output-path lcov.info
+        sed "s|$PWD/||g" -i lcov.info
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: coverage-data
+        path: head/lcov.info
