@@ -20,7 +20,7 @@ jobs:
     container: ghcr.io/famedly/rust-container:nightly
     steps:
     - name: Checkout current repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: head
 
@@ -68,7 +68,7 @@ jobs:
     needs: [test]
     steps:
     - name: Checkout current repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: head
 
@@ -109,7 +109,7 @@ jobs:
     container: ghcr.io/famedly/rust-container:nightly
     steps:
     - name: Checkout current repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: head
 
