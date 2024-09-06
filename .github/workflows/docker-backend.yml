@@ -8,17 +8,17 @@ on:
         default: false
 
       # Name of service.
-      # Will be used as a last part of container path 
+      # Will be used as a last part of container path
       # and matched with version tags if path is specified
       name:
         required: true
         type: string
-      
+
       path:
         required: false
         type: string
         default: "."
-      
+
       registry_user:
         required: false
         type: string
@@ -35,8 +35,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup SSH Keys and known_hosts
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+            mkdir -p ~/.ssh
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+            ssh-add - <<< "${{ secrets.CI_SSH_PRIVATE_KEY }}" || true
+
       - name: Build container
         shell: bash
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           docker build --pull -t build_image \
           -f "${{ inputs.path }}/Dockerfile" . \
@@ -44,7 +55,8 @@ jobs:
           --build-arg GIT_CRATE_INDEX_USER="${{ secrets.GITLAB_USER }}" \
           --build-arg GIT_CRATE_INDEX_PASS="${{ secrets.GITLAB_PASS }}" \
           --build-arg CARGO_BUILD_RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS}" \
-          --build-arg CI_SSH_PRIVATE_KEY="${{ secrets.CI_SSH_PRIVATE_KEY }}"
+          --build-arg CI_SSH_PRIVATE_KEY="${{ secrets.CI_SSH_PRIVATE_KEY }}" \
+          --ssh default
 
       - name: Branches
         # Run for branches for both subfolders and root.
@@ -72,7 +84,7 @@ jobs:
             echo "REGISTRY=${{ env.REGISTRY_RELEASES }}" >> $GITHUB_ENV
           fi
 
-          # If tag contains only a version string, tag a new release         
+          # If tag contains only a version string, tag a new release
           if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
             docker tag build_image "${IMAGE_PATH}:latest"
