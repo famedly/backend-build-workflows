@@ -6,7 +6,7 @@ on:
       runs-on:
         required: false
         type: string
-        default: ubuntu-latest-16core
+        default: ubuntu-latest
 
 # Environment variables for all jobs.
 env:
@@ -22,7 +22,7 @@ jobs:
       issues: write
       contents: read
     runs-on: ${{ inputs.runs-on }}
-    container: ghcr.io/famedly/rust-container:nightly
+    container: docker-oss.nexus.famedly.de/rust-container:nightly
     steps:
     - name: Checkout current repository
       uses: actions/checkout@v3
@@ -50,12 +50,6 @@ jobs:
       shell: bash
       run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets -- -D warnings
     
-    - name: Test
-      timeout-minutes: 20
-      shell: bash
-      working-directory: head
-      run: cargo nextest run --workspace
-
     - name: Doc-test
       shell: bash
       working-directory: head
@@ -71,3 +65,22 @@ jobs:
       working-directory: head
       run: typos
 
+    - name: Test
+      timeout-minutes: 20
+      shell: bash
+      working-directory: head
+      run: |
+        cargo llvm-cov nextest --profile ci --workspace --lcov --output-path '${{github.workspace}}/lcov.info'
+        sed "s|$PWD/||g" -i '${{github.workspace}}/lcov.info'
+
+    - name: Codecov - Upload coverage
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        files: "${{github.workspace}}/lcov.info"
+
+    - name: Codecov - Upload test results
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        file: "${{github.workspace}}/target/ci/junit.xml"
