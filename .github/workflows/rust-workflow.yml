@@ -26,8 +26,6 @@ jobs:
     steps:
     - name: Checkout current repository
       uses: actions/checkout@v3
-      with:
-        path: head
 
     - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main
       with:
@@ -37,50 +35,38 @@ jobs:
 
     - name: Caching
       uses: Swatinem/rust-cache@b8a6852b4f997182bdea832df3f9e153038b5191
-      with:
-        workspaces: "head -> target"
 
     - name: Rustfmt
       shell: bash
-      working-directory: head
       run: cargo +${NIGHTLY_VERSION} fmt -- --check
 
     - name: Clippy
-      working-directory: head
       shell: bash
       run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets -- -D warnings
     
     - name: Doc-test
       shell: bash
-      working-directory: head
       run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose
 
     - name: Udeps
       shell: bash
-      working-directory: head
       run: cargo +${NIGHTLY_VERSION} udeps
 
     - name: Typos
       shell: bash
-      working-directory: head
       run: typos
 
     - name: Test
-      timeout-minutes: 20
       shell: bash
-      working-directory: head
-      run: |
-        cargo llvm-cov nextest --profile ci --workspace --lcov --output-path '${{github.workspace}}/lcov.info'
-        sed "s|$PWD/||g" -i '${{github.workspace}}/lcov.info'
+      run: cargo llvm-cov nextest --profile ci --workspace --lcov --output-path lcov.info
 
     - name: Codecov - Upload coverage
       uses: codecov/codecov-action@v4
       with:
         token: ${{secrets.CODECOV_TOKEN}}
-        files: "${{github.workspace}}/lcov.info"
+        files: "lcov.info"
 
     - name: Codecov - Upload test results
       uses: codecov/test-results-action@v1
       with:
         token: ${{secrets.CODECOV_TOKEN}}
-        file: "${{github.workspace}}/target/ci/junit.xml"
