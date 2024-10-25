@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest-16core
     container: ghcr.io/famedly/rust-container:nightly
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/rust-prepare
         with:
@@ -34,7 +34,7 @@ jobs:
           additional_packages: ${{ env.ADDITIONAL_PACKAGES }}
 
       - name: Caching
-        uses: Swatinem/rust-cache@b8a6852b4f997182bdea832df3f9e153038b5191
+        uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
 
       - name: Rustfmt
         shell: bash
