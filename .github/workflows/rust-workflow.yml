@@ -7,6 +7,9 @@ on:
         required: false
         type: string
         default: ubuntu-latest
+      clippy_args: {required: false, type: string, default: ""}
+      test_args: {required: false, type: string, default: ""}
+      testcov_args: {required: false, type: string, default: ""}
 
 # Environment variables for all jobs.
 env:
@@ -42,11 +45,11 @@ jobs:
 
     - name: Clippy
       shell: bash
-      run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets -- -D warnings
-    
+      run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets ${{inputs.clippy_args}} -- -D warnings
+
     - name: Doc-test
       shell: bash
-      run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose
+      run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose ${{inputs.test_args}}
 
     - name: Udeps
       shell: bash
@@ -58,7 +61,7 @@ jobs:
 
     - name: Test
       shell: bash
-      run: cargo llvm-cov nextest --profile ci --workspace --lcov --output-path lcov.info
+      run: cargo llvm-cov nextest --profile ci --workspace --lcov --output-path lcov.info ${{inputs.testcov_args}}
 
     - name: Codecov - Upload coverage
       uses: codecov/codecov-action@v4
