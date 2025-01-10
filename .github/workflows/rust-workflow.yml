@@ -10,6 +10,7 @@ on:
       clippy_args: {required: false, type: string, default: ""}
       test_args: {required: false, type: string, default: ""}
       testcov_args: {required: false, type: string, default: ""}
+      udeps_args: {required: false, type: string, default: ""}
 
 # Environment variables for all jobs.
 env:
@@ -53,7 +54,7 @@ jobs:
 
     - name: Udeps
       shell: bash
-      run: cargo +${NIGHTLY_VERSION} udeps
+      run: cargo +${NIGHTLY_VERSION} udeps ${{inputs.udeps_args}}
 
     - name: Typos
       shell: bash
