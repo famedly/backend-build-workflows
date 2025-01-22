@@ -13,8 +13,12 @@ echo "CARGO_HOME = ${HOME}/${CARGO_HOME}"
 mkdir -p ${HOME}/${CARGO_HOME}
 echo "[net]" >> ${HOME}/${CARGO_HOME}/config.toml
 echo "git-fetch-with-cli = true" >> ${HOME}/${CARGO_HOME}/config.toml
-echo "[registries.${FAMEDLY_CRATES_REGISTRY}]" >> ${HOME}/${CARGO_HOME}/config.toml
-echo "index = \"${FAMEDLY_CRATES_REGISTRY_INDEX}\"" >> ${HOME}/${CARGO_HOME}/config.toml
+
+if [ "$FAMEDLY_CRATES_REGISTRY" != "crates-io" ]; then
+    echo "[registries.${FAMEDLY_CRATES_REGISTRY}]" >> ${HOME}/${CARGO_HOME}/config.toml
+    echo "index = \"${FAMEDLY_CRATES_REGISTRY_INDEX}\"" >> ${HOME}/${CARGO_HOME}/config.toml
+fi
+
 echo "CARGO_HOME=${HOME}/${CARGO_HOME}" >> "$GITHUB_ENV"
 
 echo "Preparations finished"

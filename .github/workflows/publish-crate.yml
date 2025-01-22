@@ -1,0 +1,65 @@
+name: Publish Rust crates
+
+# When using this workflow, specify that it runs on tag creation:
+#
+# on:
+#   push:
+#     tags:
+#       # For root tags, such as v0.4.2
+#       - "v[0-9]+.[0-9]+.[0-9]+"
+#       - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+#       # For subfolder tags, such as workflow-engine-v1.18.0
+#       #- "[a-zA-Z-_]+v[0-9]+.[0-9]+.[0-9]+"
+#       #- "[a-zA-Z-_]+v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+
+on:
+  workflow_call:
+    inputs:
+      registry-name:
+        description: "Name of the registry to publish to"
+        type: string
+        default: "famedly"
+      registry-index:
+        description: "URL of the registry index"
+        type: string
+        default: "ssh://git@ssh.shipyard.rs/famedly/crate-index.git"
+      packages:
+        description: "List of packages to publish; space-separated list"
+        type: string
+      features:
+        description: "List of features to publish; space-separated list"
+        type: string
+    secrets:
+      CI_SSH_PRIVATE_KEY:
+        description: "SSH key to use for authentication against the crate index"
+        required: true
+      registry-auth-token:
+        description: "Auth token for the registry to publish to"
+        required: true
+
+jobs:
+  publish:
+    # Enforce only publishing tagged commits
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    container: docker-oss.nexus.famedly.de/rust-container:nightly
+    steps:
+      - uses: actions/checkout@v4
+      - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main
+        with:
+          gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          famedly_crates_registry: ${{ inputs.registry-name }}
+          famedly_crates_registry_index: ${{ inputs.registry-index }}
+      - name: Install registry token
+        # Uses `echo` (bash built-in) to prevent leaking the token
+        # through CLI args in /proc
+        run: |
+          cat << EOF > "${CARGO_HOME}/credentials.toml"
+          [${{ inputs.registry-name != 'crates-io' && format('registries.{0}', inputs.registry-name) || 'registry' }}]
+          token = "${{ secrets.registry-auth-token }}"
+          EOF
+      - name: Publish
+        run: |
+          cargo publish ${{ inputs.registry-name != 'crates-io' && format('--registry {0}', inputs.registry-name) || '' }} \
+            ${{ inputs.packages != null && format('--package {0}', inputs.packages) || '' }} \
+            ${{ inputs.features != null && format('--features {0}', inputs.features) || '' }}
