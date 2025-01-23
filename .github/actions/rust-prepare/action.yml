@@ -22,7 +22,7 @@ inputs:
     default: "famedly"
   famedly_crates_registry_index:
     description: "URL of famedly registry index"
-    default: "ssh://git@gitlab.com:22/famedly/company/devops/crates-index.git"
+    default: "ssh://git@ssh.shipyard.rs/famedly/crate-index.git"
   additional_packages:
     description: "Additional package to install during preparation"
     default: ""
