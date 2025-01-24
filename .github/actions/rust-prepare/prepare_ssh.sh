@@ -1,8 +1,9 @@
+#!/usr/bin/env bash
 echo "Preparing Rust build environment"
 
 echo "Setting up SSH"
 USER="$(whoami)"
-SSH_HOME="$(getent passwd $USER | cut -d: -f6)" # Is different from $HOME in docker containers, because github CI..
+SSH_HOME="$(getent passwd "$USER" | cut -d: -f6)" # Is different from $HOME in docker containers, because github CI..
 ssh-agent -a "${SSH_AUTH_SOCK}" > /dev/null
 echo "SSH_AUTH_SOCK=${SSH_AUTH_SOCK}" >> "$GITHUB_ENV"
 ssh-add -vvv - <<< "${GITLAB_SSH}"$'\n' # ensure newline at the end of key
