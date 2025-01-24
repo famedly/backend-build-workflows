@@ -16,7 +16,7 @@ env:
 
 # Defined CI jobs.
 jobs:
-  check:
+  test-rust-workflow:
     uses: ./.github/workflows/rust-workflow.yml
     with:
       ref: ${{ github.ref }}

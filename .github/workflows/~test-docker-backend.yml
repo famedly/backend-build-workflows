@@ -8,18 +8,18 @@ on:
     branches: ["*"]
 
 jobs:
-  test_root:
+  test-docker-backend-root:
     uses: ./.github/workflows/docker-backend.yml
     secrets: inherit
     with:
       name: backend_build_workflows_root
-  test_subfolder:
+  test-docker-backend-subfolder:
     uses: ./.github/workflows/docker-backend.yml
     secrets: inherit
     with:
       path: subfolder
       name: backend_build_workflows_subfolder
-  test_subsubfolder:
+  test-docker-backend-subsubfolder:
     uses: ./.github/workflows/docker-backend.yml
     secrets: inherit
     with:
