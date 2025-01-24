@@ -27,7 +27,7 @@ env:
 
 # Defined CI jobs.
 jobs:
-  check:
+  rust-tests:
     # This is set explictly to allow Meow-Coverage to post comments in response to Dependabot PRs which have a read-only GITHUB_TOKEN by default
     permissions:
       pull-requests: write
