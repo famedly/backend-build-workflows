@@ -30,7 +30,7 @@ env:
   REGISTRY_OSS: docker-oss.nexus.famedly.de
 
 jobs:
-  docker:
+  docker-publish:
     runs-on: ubuntu-latest-16core
     steps:
       - uses: actions/checkout@v4
