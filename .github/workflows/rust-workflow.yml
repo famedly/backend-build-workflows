@@ -11,6 +11,14 @@ on:
       test_args: {required: false, type: string, default: ""}
       testcov_args: {required: false, type: string, default: ""}
       udeps_args: {required: false, type: string, default: ""}
+      ref:
+        description: "The ref/version of this workflow; used to pull the correct dependency versions"
+        # For backwards compatibility, we set the main branch.
+        #
+        # TODO: This is prone to breakage, we should eventually
+        # deprecate this.
+        default: "main"
+        type: string
 
 # Environment variables for all jobs.
 env:
@@ -28,14 +36,20 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     container: docker-oss.nexus.famedly.de/rust-container:nightly
     steps:
-    - name: Checkout current repository
+    - name: Checkout workflow dependencies
       uses: actions/checkout@v4
+      with:
+        repository: famedly/backend-build-workflows
+        ref: ${{ inputs.ref }}
 
-    - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main
+    - uses: ./.github/actions/rust-prepare
       with:
         gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
         gitlab_user: ${{ secrets.GITLAB_USER }}
         gitlab_pass: ${{ secrets.GITLAB_PASS }}
+
+    - name: Checkout the repository to test
+      uses: actions/checkout@v4
 
     - name: Caching
       uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
