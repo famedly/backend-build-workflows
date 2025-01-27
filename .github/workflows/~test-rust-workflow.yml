@@ -21,6 +21,4 @@ env:
 jobs:
   test-rust-workflow:
     uses: ./.github/workflows/rust-workflow.yml
-    with:
-      ref: ${{ github.ref }}
     secrets: inherit
