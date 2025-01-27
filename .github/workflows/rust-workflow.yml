@@ -7,23 +7,22 @@ on:
         required: false
         type: string
         default: ubuntu-latest
+
+      additional_packages:
+        required: false
+        description: |
+          Additional ubuntu packages to install before running any
+          commands.
+        type: string
+
+      container:
+        type: string
+        default: docker-oss.nexus.famedly.de/rust-container:nightly
+
       clippy_args: {required: false, type: string, default: ""}
       test_args: {required: false, type: string, default: ""}
       testcov_args: {required: false, type: string, default: ""}
       udeps_args: {required: false, type: string, default: ""}
-      ref:
-        description: "The ref/version of this workflow; used to pull the correct dependency versions"
-        # For backwards compatibility, we set the main branch.
-        #
-        # TODO: This is prone to breakage, we should eventually
-        # deprecate this.
-        default: "main"
-        type: string
-
-# Environment variables for all jobs.
-env:
-  CARGO_TERM_COLOR: always
-  ADDITIONAL_PACKAGES: ""
 
     secrets:
       CI_SSH_PRIVATE_KEY:
@@ -49,22 +48,21 @@ jobs:
       issues: write
       contents: read
     runs-on: ${{ inputs.runs-on }}
-    container: docker-oss.nexus.famedly.de/rust-container:nightly
+    container:
+      image: ${{ inputs.container }}
     steps:
-    - name: Checkout workflow dependencies
-      uses: actions/checkout@v4
-      with:
-        repository: famedly/backend-build-workflows
-        ref: ${{ inputs.ref }}
+    - name: Run container entrypoint
+      run: /entrypoint.bash
+      env:
+        FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+        FRC_ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
 
-    - uses: ./.github/actions/rust-prepare
-      with:
-        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
-        gitlab_user: ${{ secrets.GITLAB_USER }}
-        gitlab_pass: ${{ secrets.GITLAB_PASS }}
 
     - name: Checkout use-ing workflow's repository
       uses: actions/checkout@v4
+
+    - name: Tell git that the repo is safe
+      run: git config --global --add safe.directory $(pwd)
 
     - name: Caching
       uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
