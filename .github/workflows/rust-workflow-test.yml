@@ -16,6 +16,6 @@ env:
 
 # Defined CI jobs.
 jobs:
-  check:
+  test-rust-workflow:
     uses: ./.github/workflows/rust-workflow.yml
     secrets: inherit
