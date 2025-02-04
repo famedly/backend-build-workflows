@@ -17,7 +17,7 @@ on:
 
       container:
         type: string
-        default: docker-oss.nexus.famedly.de/rust-container:nightly
+        default: docker-nightly.nexus.famedly.de/rust-container:dev-tlater-entrypoint
 
       clippy_args: {required: false, type: string, default: ""}
       test_args: {required: false, type: string, default: ""}
@@ -38,6 +38,8 @@ on:
           codecov. If not specified, the coverage parts of this job
           will fail, however requiring secrets means that the
           `inherit` syntax does not work.
+      REGISTRY_PASSWORD:
+        required: false
 
 # Defined CI jobs.
 jobs:
@@ -50,6 +52,9 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     container:
       image: ${{ inputs.container }}
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
     - name: Run container entrypoint
       run: /entrypoint.bash
@@ -57,6 +62,8 @@ jobs:
         FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
         FRC_ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
 
+    - name: Double check cargo config
+      run: cat $CARGO_HOME/config.toml
 
     - name: Checkout use-ing workflow's repository
       uses: actions/checkout@v4
