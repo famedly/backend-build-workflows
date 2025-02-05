@@ -1,10 +1,16 @@
-# Docker action
+# Backend team CI actions and reusable workflows
 
-To use the docker build, you can follow the example in [test](./.github/workflows/docker-test.yml)
+This repository currently offers the following workflows:
 
-We have two main use cases
+## docker-publish
 
-## Simple service with no subfolders
+Publishes a docker image for a service to the correct docker registry.
+
+### Examples
+
+We have two main use cases:
+
+#### Simple service with no subfolders
 
 ```yaml
 jobs:
@@ -17,7 +23,7 @@ jobs:
 
 should take care of everything
 
-## Complex service with subfolders
+#### Complex service with subfolders
 
 ```yaml
 jobs:
@@ -28,3 +34,34 @@ jobs:
       path: ./foo/bar # path to where the Dockerfile resides
       name: bar # name of service
 ```
+
+See also the [test case](.github/workflows/~test-docker-backend.yml).
+
+## rust-tests
+
+Runs basic rust lint checks, followed by the repository's test suite
+(using `cargo nextest`), and reports code test coverage.
+
+### Examples
+
+#### Common, simple use case
+
+```yaml
+jobs:
+  rust-tests:
+    uses: famedly/backend-build-workflows@v2
+    secrets: inherit
+```
+
+#### Allow `cargo nextest` to spin up docker containers
+
+```yaml
+jobs:
+  rust-tests:
+    uses: famedly/backend-build-workflows@v2
+    secrets: inherit
+```
+
+#### Specifying various additional arguments
+
+See also the [test case](.github/workflows/~test-rust-workflow.yml)
