@@ -7,35 +7,72 @@ on:
         required: false
         type: string
         default: ubuntu-latest
+
+      additional_packages:
+        required: false
+        description: |
+          Additional ubuntu packages to install before running any
+          commands.
+        type: string
+
+      container:
+        type: string
+        default: docker-nightly.nexus.famedly.de/rust-container:dev-tlater-entrypoint
+
       clippy_args: {required: false, type: string, default: ""}
       test_args: {required: false, type: string, default: ""}
       testcov_args: {required: false, type: string, default: ""}
       udeps_args: {required: false, type: string, default: ""}
 
-# Environment variables for all jobs.
-env:
-  CARGO_TERM_COLOR: always
-  ADDITIONAL_PACKAGES: ""
+    secrets:
+      CI_SSH_PRIVATE_KEY:
+        required: false
+        description: |
+          Private SSH key to use for cargo dependencies that need to
+          either be fetched from private GitHub repositories or a
+          private registry.
+      CODECOV_TOKEN:
+        required: false
+        description: |
+          Token to use when publishing code coverage results to
+          codecov. If not specified, the coverage parts of this job
+          will fail, however requiring secrets means that the
+          `inherit` syntax does not work.
+      REGISTRY_PASSWORD:
+        required: false
 
 # Defined CI jobs.
 jobs:
-  check:
+  rust-tests:
     # This is set explictly to allow Meow-Coverage to post comments in response to Dependabot PRs which have a read-only GITHUB_TOKEN by default
     permissions:
       pull-requests: write
       issues: write
       contents: read
     runs-on: ${{ inputs.runs-on }}
-    container: docker-oss.nexus.famedly.de/rust-container:nightly
+    container:
+      image: ${{ inputs.container }}
+      volumes:
+        # This permits running docker inside the container
+        - /var/run/docker.sock:/var/run/docker.sock
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
-    - name: Checkout current repository
+    - name: Run container entrypoint
+      run: /entrypoint.bash
+      env:
+        FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+        FRC_ADDITIONAL_PACKAGES: "docker.io ${{ inputs.additional_packages }}"
+
+    - name: Double check cargo config
+      run: cat $CARGO_HOME/config.toml
+
+    - name: Checkout use-ing workflow's repository
       uses: actions/checkout@v4
 
-    - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main
-      with:
-        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
-        gitlab_user: ${{ secrets.GITLAB_USER }}
-        gitlab_pass: ${{ secrets.GITLAB_PASS }}
+    - name: Tell git that the repo is safe
+      run: git config --global --add safe.directory $(pwd)
 
     - name: Caching
       uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
@@ -58,7 +95,7 @@ jobs:
 
     - name: Typos
       shell: bash
-      run: typos
+      run: typos # TODO: Use the typos action
 
     - name: Test
       shell: bash

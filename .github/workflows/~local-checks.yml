@@ -1,0 +1,26 @@
+name: Lint actions
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+
+# Make sure there is no pipeline running uselessly.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-b # -b should be removed, just for separate workflows in this repository
+  cancel-in-progress: true
+
+jobs:
+  lints:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run shellcheck on all shell files
+        run: find . \( -name '*.sh' -or -name '*.bash' \) -exec shellcheck --color=always {} +
