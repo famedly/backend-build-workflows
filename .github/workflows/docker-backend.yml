@@ -23,6 +23,20 @@ on:
         required: false
         type: string
         default: famedly-ci
+
+    secrets:
+      CI_SSH_PRIVATE_KEY:
+        required: false
+        description: |
+          Private SSH key to use for cargo dependencies that need to
+          either be fetched from private GitHub repositories or a
+          private registry.
+      registry_password:
+        required: false
+        description: |
+          The password to use to push to the docker registry. If left
+          unset, the GitHub token will be used instead.
+
 env:
   RUSTC_WRAPPER: cachepot
   REGISTRY_SNAPSHOTS: docker-nightly.nexus.famedly.de
@@ -30,7 +44,7 @@ env:
   REGISTRY_OSS: docker-oss.nexus.famedly.de
 
 jobs:
-  docker:
+  docker-publish:
     runs-on: ubuntu-latest-16core
     steps:
       - uses: actions/checkout@v4

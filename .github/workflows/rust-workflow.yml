@@ -11,15 +11,38 @@ on:
       test_args: {required: false, type: string, default: ""}
       testcov_args: {required: false, type: string, default: ""}
       udeps_args: {required: false, type: string, default: ""}
+      ref:
+        description: "The ref/version of this workflow; used to pull the correct dependency versions"
+        # For backwards compatibility, we set the main branch.
+        #
+        # TODO: This is prone to breakage, we should eventually
+        # deprecate this.
+        default: "main"
+        type: string
 
 # Environment variables for all jobs.
 env:
   CARGO_TERM_COLOR: always
   ADDITIONAL_PACKAGES: ""
 
+    secrets:
+      CI_SSH_PRIVATE_KEY:
+        required: false
+        description: |
+          Private SSH key to use for cargo dependencies that need to
+          either be fetched from private GitHub repositories or a
+          private registry.
+      CODECOV_TOKEN:
+        required: false
+        description: |
+          Token to use when publishing code coverage results to
+          codecov. If not specified, the coverage parts of this job
+          will fail, however requiring secrets means that the
+          `inherit` syntax does not work.
+
 # Defined CI jobs.
 jobs:
-  check:
+  rust-tests:
     # This is set explictly to allow Meow-Coverage to post comments in response to Dependabot PRs which have a read-only GITHUB_TOKEN by default
     permissions:
       pull-requests: write
@@ -28,14 +51,20 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     container: docker-oss.nexus.famedly.de/rust-container:nightly
     steps:
-    - name: Checkout current repository
+    - name: Checkout workflow dependencies
       uses: actions/checkout@v4
+      with:
+        repository: famedly/backend-build-workflows
+        ref: ${{ inputs.ref }}
 
-    - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main
+    - uses: ./.github/actions/rust-prepare
       with:
         gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
         gitlab_user: ${{ secrets.GITLAB_USER }}
         gitlab_pass: ${{ secrets.GITLAB_PASS }}
+
+    - name: Checkout use-ing workflow's repository
+      uses: actions/checkout@v4
 
     - name: Caching
       uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
@@ -58,7 +87,7 @@ jobs:
 
     - name: Typos
       shell: bash
-      run: typos
+      run: typos # TODO: Use the typos action
 
     - name: Test
       shell: bash
