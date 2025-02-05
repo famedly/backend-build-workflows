@@ -52,6 +52,9 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     container:
       image: ${{ inputs.container }}
+      volumes:
+        # This permits running docker inside the container
+        - /var/run/docker.sock:/var/run/docker.sock
       credentials:
         username: ${{ vars.NEXUS_REGISTRY_USER }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
@@ -60,7 +63,7 @@ jobs:
       run: /entrypoint.bash
       env:
         FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-        FRC_ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
+        FRC_ADDITIONAL_PACKAGES: "docker.io ${{ inputs.additional_packages }}"
 
     - name: Double check cargo config
       run: cat $CARGO_HOME/config.toml
