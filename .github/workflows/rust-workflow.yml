@@ -72,7 +72,7 @@ jobs:
 
     - name: Typos
       shell: bash
-      run: typos
+      run: typos # TODO: Use the typos action
 
     - name: Test
       shell: bash
