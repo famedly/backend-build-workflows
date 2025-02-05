@@ -20,6 +20,21 @@ on:
         default: "main"
         type: string
 
+    secrets:
+      CI_SSH_PRIVATE_KEY:
+        required: false
+        description: |
+          Private SSH key to use for cargo dependencies that need to
+          either be fetched from private GitHub repositories or a
+          private registry.
+      CODECOV_TOKEN:
+        required: false
+        description: |
+          Token to use when publishing code coverage results to
+          codecov. If not specified, the coverage parts of this job
+          will fail, however requiring secrets means that the
+          `inherit` syntax does not work.
+
 # Environment variables for all jobs.
 env:
   CARGO_TERM_COLOR: always
