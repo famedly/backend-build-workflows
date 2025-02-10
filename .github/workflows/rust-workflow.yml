@@ -24,11 +24,6 @@ on:
       udeps_args: {required: false, type: string, default: ""}
       ref:
         description: "The ref/version of this workflow; used to pull the correct dependency versions"
-        # For backwards compatibility, we set the main branch.
-        #
-        # TODO: This is prone to breakage, we should eventually
-        # deprecate this.
-        default: "main"
         type: string
 
     secrets:
