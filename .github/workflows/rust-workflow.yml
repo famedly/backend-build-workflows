@@ -7,6 +7,17 @@ on:
         required: false
         type: string
         default: ubuntu-latest
+
+      run-doctests:
+        description: |
+          Whether to run doctests.
+
+          Pure binary repos may not want this due to a long standing
+          cargo bug: https://github.com/rust-lang/cargo/issues/5477
+        required: false
+        type: boolean
+        default: true
+
       clippy_args: {required: false, type: string, default: ""}
       test_args: {required: false, type: string, default: ""}
       testcov_args: {required: false, type: string, default: ""}
@@ -79,6 +90,7 @@ jobs:
 
     - name: Doc-test
       shell: bash
+      if: inputs.run-doctests
       run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose ${{inputs.test_args}}
 
     - name: Udeps
