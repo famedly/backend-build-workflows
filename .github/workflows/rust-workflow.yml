@@ -24,11 +24,6 @@ on:
       udeps_args: {required: false, type: string, default: ""}
       ref:
         description: "The ref/version of this workflow; used to pull the correct dependency versions"
-        # For backwards compatibility, we set the main branch.
-        #
-        # TODO: This is prone to breakage, we should eventually
-        # deprecate this.
-        default: "main"
         type: string
 
     secrets:
@@ -54,11 +49,6 @@ env:
 # Defined CI jobs.
 jobs:
   rust-tests:
-    # This is set explictly to allow Meow-Coverage to post comments in response to Dependabot PRs which have a read-only GITHUB_TOKEN by default
-    permissions:
-      pull-requests: write
-      issues: write
-      contents: read
     runs-on: ${{ inputs.runs-on }}
     container: docker-oss.nexus.famedly.de/rust-container:nightly
     steps:
@@ -99,7 +89,7 @@ jobs:
 
     - name: Typos
       shell: bash
-      run: typos
+      run: typos # TODO: Use the typos action
 
     - name: Test
       shell: bash
