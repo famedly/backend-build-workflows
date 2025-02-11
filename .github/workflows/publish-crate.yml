@@ -42,7 +42,11 @@ jobs:
     # Enforce only publishing tagged commits
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    container: docker-oss.nexus.famedly.de/rust-container:nightly
+    container:
+      image: docker-nightly.nexus.famedly.de/rust-container:dev-tlater-entrypoint
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
       - name: Run container entrypoint
         run: /entrypoint.sh
