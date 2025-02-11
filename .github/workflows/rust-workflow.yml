@@ -51,7 +51,7 @@ on:
 
 # Defined CI jobs.
 jobs:
-  rust-tests:
+  rust-lints:
     runs-on: ${{ inputs.runs-on }}
     container:
       image: ${{ inputs.container }}
@@ -67,7 +67,6 @@ jobs:
       env:
         FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
         FRC_ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
-
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4
@@ -86,11 +85,6 @@ jobs:
       shell: bash
       run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets ${{inputs.clippy_args}} -- -D warnings
 
-    - name: Doc-test
-      shell: bash
-      if: inputs.run-doctests
-      run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose ${{inputs.test_args}}
-
     - name: Udeps
       shell: bash
       run: cargo +${NIGHTLY_VERSION} udeps ${{inputs.udeps_args}}
@@ -99,9 +93,40 @@ jobs:
       shell: bash
       run: typos # TODO: Use the typos action
 
+  rust-tests:
+    runs-on: ${{ inputs.runs-on }}
+    container:
+      image: ${{ inputs.container }}
+      volumes:
+        # This permits running docker inside the container
+        - /var/run/docker.sock:/var/run/docker.sock
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+    steps:
+    - name: Run container entrypoint
+      run: /entrypoint.sh
+      env:
+        FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+        FRC_ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
+
+    - name: Checkout the repository to test
+      uses: actions/checkout@v4
+
+    - name: Tell git that the repo is safe
+      run: git config --global --add safe.directory $(pwd)
+
+    - name: Caching
+      uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
+
     - name: Test
       shell: bash
       run: cargo llvm-cov nextest --profile ci --workspace --lcov --output-path lcov.info ${{inputs.testcov_args}}
+
+    - name: Doc-test
+      shell: bash
+      if: inputs.run-doctests
+      run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose ${{inputs.test_args}}
 
     - name: Codecov - Upload coverage
       uses: codecov/codecov-action@v4
