@@ -27,7 +27,7 @@ on:
 
       container:
         type: string
-        default: docker-oss.nexus.famedly.de/rust-container:nightly
+        default: docker-nightly.nexus.famedly.de/rust-container:dev-tlater-entrypoint
 
       clippy_args: {required: false, type: string, default: ""}
       test_args: {required: false, type: string, default: ""}
@@ -55,6 +55,9 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     container:
       image: ${{ inputs.container }}
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
     - name: Run container entrypoint
       run: /entrypoint.sh
@@ -92,6 +95,12 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     container:
       image: ${{ inputs.container }}
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+      volumes:
+        # This permits running docker inside the container
+        - /var/run/docker.sock:/var/run/docker.sock
     steps:
     - name: Run container entrypoint
       run: /entrypoint.sh
