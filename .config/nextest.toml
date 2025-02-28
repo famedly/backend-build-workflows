@@ -4,3 +4,6 @@ fail-fast = false
 path = "junit.xml"
 store-success-output = true
 store-failure-output = true
+
+[profile.e2e]
+default-filter = "test(#e2e::*)"
