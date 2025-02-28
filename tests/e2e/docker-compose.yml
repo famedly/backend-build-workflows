@@ -1,0 +1,7 @@
+services:
+  tests:
+    build:
+      dockerfile: ./Dockerfile
+    command: cargo nextest run --profile e2e --archive-file /tests.tar.zst --workspace-remap /repo
+  nginx:
+    image: nginx
