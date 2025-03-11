@@ -18,13 +18,21 @@ on:
         type: boolean
         default: true
 
+      additional_packages:
+        required: false
+        description: |
+          Additional ubuntu packages to install before running any
+          commands.
+        type: string
+
+      container:
+        type: string
+        default: docker-nightly.nexus.famedly.de/rust-container:dev-tlater-entrypoint
+
       clippy_args: {required: false, type: string, default: ""}
       test_args: {required: false, type: string, default: ""}
       testcov_args: {required: false, type: string, default: ""}
       udeps_args: {required: false, type: string, default: ""}
-      ref:
-        description: "The ref/version of this workflow; used to pull the correct dependency versions"
-        type: string
 
     secrets:
       CI_SSH_PRIVATE_KEY:
@@ -41,31 +49,30 @@ on:
           will fail, however requiring secrets means that the
           `inherit` syntax does not work.
 
-# Environment variables for all jobs.
-env:
-  CARGO_TERM_COLOR: always
-  ADDITIONAL_PACKAGES: ""
-
 # Defined CI jobs.
 jobs:
-  rust-tests:
+  rust-lints:
     runs-on: ${{ inputs.runs-on }}
-    container: docker-oss.nexus.famedly.de/rust-container:nightly
+    container:
+      image: ${{ inputs.container }}
+      volumes:
+        # This permits running docker inside the container
+        - /var/run/docker.sock:/var/run/docker.sock
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
-    - name: Checkout workflow dependencies
-      uses: actions/checkout@v4
-      with:
-        repository: famedly/backend-build-workflows
-        ref: ${{ inputs.ref }}
-
-    - uses: ./.github/actions/rust-prepare
-      with:
-        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
-        gitlab_user: ${{ secrets.GITLAB_USER }}
-        gitlab_pass: ${{ secrets.GITLAB_PASS }}
+    - name: Run container entrypoint
+      run: /entrypoint.sh
+      env:
+        FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+        FRC_ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4
+
+    - name: Tell git that the repo is safe
+      run: git config --global --add safe.directory $(pwd)
 
     - name: Caching
       uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
@@ -78,11 +85,6 @@ jobs:
       shell: bash
       run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets ${{inputs.clippy_args}} -- -D warnings
 
-    - name: Doc-test
-      shell: bash
-      if: inputs.run-doctests
-      run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose ${{inputs.test_args}}
-
     - name: Udeps
       shell: bash
       run: cargo +${NIGHTLY_VERSION} udeps ${{inputs.udeps_args}}
@@ -91,9 +93,46 @@ jobs:
       shell: bash
       run: typos # TODO: Use the typos action
 
-    - name: Test
+  rust-tests:
+    runs-on: ${{ inputs.runs-on }}
+    container:
+      image: ${{ inputs.container }}
+      volumes:
+        # This permits running docker inside the container
+        - /var/run/docker.sock:/var/run/docker.sock
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+    steps:
+    - name: Run container entrypoint
+      run: /entrypoint.sh
+      env:
+        FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+        FRC_ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
+
+    - name: Checkout the repository to test
+      uses: actions/checkout@v4
+
+    - name: Tell git that the repo is safe
+      run: git config --global --add safe.directory $(pwd)
+
+    - name: Caching
+      uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
+
+    - name: Unit and integration tests
       shell: bash
       run: cargo llvm-cov nextest --profile ci --workspace --lcov --output-path lcov.info ${{inputs.testcov_args}}
+
+    - name: E2E tests
+      run: |
+        git archive HEAD --output=tests/e2e/git.tar
+        cargo nextest archive --profile e2e --archive-file tests/e2e/tests.tar.zst
+        docker compose --project-directory tests/e2e up --quiet-pull --build --exit-code-from tests
+
+    - name: Doc-test
+      shell: bash
+      if: inputs.run-doctests
+      run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose ${{inputs.test_args}}
 
     - name: Codecov - Upload coverage
       uses: codecov/codecov-action@v4
