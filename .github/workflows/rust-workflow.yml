@@ -76,7 +76,7 @@ jobs:
 
     - name: Clippy
       shell: bash
-      run: cargo +${NIGHTLY_VERSION} clippy --workspace --all-targets ${{inputs.clippy_args}} -- -D warnings
+      run: cargo clippy --workspace --all-targets ${{inputs.clippy_args}} -- -D warnings
 
     - name: Udeps
       shell: bash
