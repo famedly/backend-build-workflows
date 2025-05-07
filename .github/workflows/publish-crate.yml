@@ -42,14 +42,19 @@ jobs:
     # Enforce only publishing tagged commits
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    container: docker-oss.nexus.famedly.de/rust-container:nightly
+    container:
+      image: docker-nightly.nexus.famedly.de/rust-container:dev-tlater-entrypoint
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
+      - name: Run container entrypoint
+        run: /entrypoint.sh
+        env:
+          FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          FRC_CRATES_REGISTRY: ${{ inputs.registry-name }}
+          FRC_CRATES_REGISTRY_INDEX: ${{ inputs.registry-index }}
       - uses: actions/checkout@v4
-      - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main
-        with:
-          gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          famedly_crates_registry: ${{ inputs.registry-name }}
-          famedly_crates_registry_index: ${{ inputs.registry-index }}
       - name: Install registry token
         # Uses `echo` (bash built-in) to prevent leaking the token
         # through CLI args in /proc

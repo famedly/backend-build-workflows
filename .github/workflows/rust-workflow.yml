@@ -18,13 +18,28 @@ on:
         type: boolean
         default: true
 
+      run-e2e-tests:
+        description: |
+          Whether to run e2e tests.
+        required: false
+        type: boolean
+        default: false
+
+      additional_packages:
+        required: false
+        description: |
+          Additional ubuntu packages to install before running any
+          commands.
+        type: string
+
+      container:
+        type: string
+        default: docker-nightly.nexus.famedly.de/rust-container:dev-tlater-entrypoint
+
       clippy_args: {required: false, type: string, default: ""}
       test_args: {required: false, type: string, default: ""}
       testcov_args: {required: false, type: string, default: ""}
       udeps_args: {required: false, type: string, default: ""}
-      ref:
-        description: "The ref/version of this workflow; used to pull the correct dependency versions"
-        type: string
 
     secrets:
       CI_SSH_PRIVATE_KEY:
@@ -41,31 +56,28 @@ on:
           will fail, however requiring secrets means that the
           `inherit` syntax does not work.
 
-# Environment variables for all jobs.
-env:
-  CARGO_TERM_COLOR: always
-  ADDITIONAL_PACKAGES: ""
-
 # Defined CI jobs.
 jobs:
   rust-lints:
     runs-on: ${{ inputs.runs-on }}
-    container: docker-oss.nexus.famedly.de/rust-container:nightly
+    container:
+      image: ${{ inputs.container }}
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
-    - name: Checkout workflow dependencies
-      uses: actions/checkout@v4
-      with:
-        repository: famedly/backend-build-workflows
-        ref: ${{ inputs.ref }}
+    - name: Run container entrypoint
+      run: /entrypoint.sh
+      env:
+        FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+        FRC_ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
 
-    - uses: ./.github/actions/rust-prepare
-      with:
-        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
-        gitlab_user: ${{ secrets.GITLAB_USER }}
-        gitlab_pass: ${{ secrets.GITLAB_PASS }}
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4
+
+    - name: Tell git that the repo is safe
+      run: git config --global --add safe.directory $(pwd)
 
     - name: Caching
       uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
@@ -88,29 +100,39 @@ jobs:
 
   rust-tests:
     runs-on: ${{ inputs.runs-on }}
-    container: docker-oss.nexus.famedly.de/rust-container:nightly
+    container:
+      image: ${{ inputs.container }}
+      credentials:
+        username: ${{ vars.NEXUS_REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+      volumes:
+        # This permits running docker inside the container
+        - /var/run/docker.sock:/var/run/docker.sock
     steps:
-    - name: Checkout workflow dependencies
-      uses: actions/checkout@v4
-      with:
-        repository: famedly/backend-build-workflows
-        ref: ${{ inputs.ref }}
-
-    - uses: ./.github/actions/rust-prepare
-      with:
-        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
-        gitlab_user: ${{ secrets.GITLAB_USER }}
-        gitlab_pass: ${{ secrets.GITLAB_PASS }}
+    - name: Run container entrypoint
+      run: /entrypoint.sh
+      env:
+        FRC_SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+        FRC_ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4
 
+    - name: Tell git that the repo is safe
+      run: git config --global --add safe.directory $(pwd)
+
     - name: Caching
       uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
 
-    - name: Test
+    - name: Unit and integration tests
       shell: bash
       run: cargo llvm-cov nextest --profile ci --workspace --lcov --output-path lcov.info ${{inputs.testcov_args}}
+
+    - name: E2E tests
+      if: inputs.run-e2e-tests
+      run: |
+        docker build --target test -t famedly-workflow-tests:latest .
+        docker compose --project-directory tests/e2e/env up --quiet-pull --build --exit-code-from tests
 
     - name: Doc-test
       shell: bash

@@ -1,0 +1,8 @@
+services:
+  tests:
+    image: famedly-workflow-tests:latest
+    command: ls /
+    depends_on:
+      - nginx
+  nginx:
+    image: nginx
