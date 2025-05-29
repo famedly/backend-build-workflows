@@ -7,17 +7,10 @@ on:
         type: boolean
         default: false
 
-      # Name of service.
-      # Will be used as a last part of container path
-      # and matched with version tags if path is specified
-      name:
+      # Comma separated string of targets to build
+      targets:
         required: true
         type: string
-
-      path:
-        required: false
-        type: string
-        default: "."
 
       registry_user:
         required: false
@@ -58,112 +51,83 @@ jobs:
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add - <<< "${{ secrets.CI_SSH_PRIVATE_KEY }}" || true
 
-      - name: Build container
+      # TODO: consider adding an intermediate `docker build -t base_image --target base` step
+      # if current version rebuilds base stage for each target without caching. Ideally we want
+      # one heavy stage with `cargo build` inside and then several small ones with just
+      # `ADD --from base /workdir/target/release/the-bin /usr/local/the-bin`
+
+      - name: Build
         shell: bash
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          docker build --pull -t build_image \
-          -f "${{ inputs.path }}/Dockerfile" . \
-          --build-arg CARGO_REGISTRIES_FAMEDLY_INDEX="${{ vars.CARGO_REGISTRIES_FAMEDLY_INDEX }}" \
-          --build-arg GIT_CRATE_INDEX_USER="${{ secrets.GITLAB_USER }}" \
-          --build-arg GIT_CRATE_INDEX_PASS="${{ secrets.GITLAB_PASS }}" \
-          --build-arg CARGO_BUILD_RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS}" \
-          --build-arg CI_SSH_PRIVATE_KEY="${{ secrets.CI_SSH_PRIVATE_KEY }}" \
-          --ssh default
+          for target in $(echo "${{ inputs.targets }}" | tr ',' '\n'); do
+            echo "::group::Building ${target}"
 
-      - name: Branches
-        # Run for branches for both subfolders and root.
-        if: github.ref_type == 'branch'
+            docker build --pull -t ${target} --target ${target} \
+              --build-arg CARGO_REGISTRIES_FAMEDLY_INDEX="${{ vars.CARGO_REGISTRIES_FAMEDLY_INDEX }}" \
+              --build-arg CARGO_BUILD_RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS}" \
+              --ssh default .
+
+            echo "::endgroup::"
+          done
+
+      - name: Resolve registry to push
         shell: bash
         run: |
-          IMAGE_PATH=${{ env.REGISTRY_SNAPSHOTS }}/${{ inputs.name }}
-          # Always tag the branch name of all services. Use the head_ref for PRs, ref for branches.
-          # Replace / by - in branch names.
-          REF_NAME=`echo "${{ github.head_ref || github.ref }}" | sed -r "s|^refs/heads/(.*)$|\1|" | sed -r "s|/|-|g"`
-          docker tag build_image "${IMAGE_PATH}:${REF_NAME}"
-          docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
-          echo "REGISTRY=${{ env.REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
-
-      - name: Tag for root services
-        # Run if we are working on root Dockerfile for tags
-        if: github.ref_type == 'tag' && inputs.path == '.'
-        shell: bash
-        run: |
-          if [[ ${{ inputs.oss }} == true ]]; then
-            IMAGE_PATH=${{ env.REGISTRY_OSS }}/${{ inputs.name }}
-            echo "REGISTRY=${{ env.REGISTRY_OSS }}" >> $GITHUB_ENV
-          else
-            IMAGE_PATH=${{ env.REGISTRY_RELEASES }}/${{ inputs.name }}
-            echo "REGISTRY=${{ env.REGISTRY_RELEASES }}" >> $GITHUB_ENV
-          fi
-
-          # If tag contains only a version string, tag a new release
-          if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
-            docker tag build_image "${IMAGE_PATH}:latest"
-            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
-
-          # If tag contains a version string, but also some characters after it (beta version / RC / etc.)
-          elif [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
-            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
-
-          # If tag doesn't contain any version string at all, tag the image with the tag (for e.g. nightly/weekly snapshots).
-          elif ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            IMAGE_PATH=${{ env.REGISTRY_SNAPSHOTS }}/${{ inputs.name }}
-            docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
-            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
+          if [ ${{ github.ref_type }} = 'branch' ]; then
             echo "REGISTRY=${{ env.REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
-          fi
-
-          # The rest will be version tags that are tagged for different service from monorepo
-
-      - name: Subfolder tag
-        # Run for subfolder services
-        if: github.ref_type == 'tag' &&  inputs.path != '.'
-        shell: bash
-        run: |
-          # If it's a version tag for specific service, tag it with version
-          if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+          elif [ ${{ github.ref_type }} = 'tag' ]; then
             if [[ ${{ inputs.oss }} == true ]]; then
-              IMAGE_PATH=${{ env.REGISTRY_OSS }}/${{ inputs.name }}
               echo "REGISTRY=${{ env.REGISTRY_OSS }}" >> $GITHUB_ENV
             else
-              IMAGE_PATH=${{ env.REGISTRY_RELEASES }}/${{ inputs.name }}
               echo "REGISTRY=${{ env.REGISTRY_RELEASES }}" >> $GITHUB_ENV
             fi
-
-            VERSION=`echo "${{ github.ref_name }}" | sed -r "s/^${{ inputs.name }}-(v[0-9]+.[0-9]+.[0-9]+.*)$/\1/"`
-            docker tag build_image "${IMAGE_PATH}:${VERSION}"
-            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
-
-            # If it's a version tag without any additional release candidate / beta string etc., tag a latest release
-            if [[ ${{ github.ref_name }} =~ ^${{ inputs.name }}-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              docker tag build_image "${IMAGE_PATH}:latest"
+            if ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+              echo "REGISTRY=${{ env.REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
             fi
-
-          # If it doesn't contain any version string, use it as-is (for e.g. nightly/weekly snapshots).
-          elif ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            IMAGE_PATH=${{ env.REGISTRY_SNAPSHOTS }}/${{ inputs.name }}
-            docker tag build_image "${IMAGE_PATH}:${{ github.ref_name }}"
-            docker tag build_image "${IMAGE_PATH}:${{ github.sha }}"
-            echo "REGISTRY=${{ env.REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
           fi
 
-          # The rest will be version tags that are tagged for different service from monorepo
+      - name: Tag
+        shell: bash
+        if: env.REGISTRY != null
+        run: |
+          for target in $(echo "${{ inputs.targets }}" | tr ',' '\n'); do
+            IMAGE_PATH="${{ env.REGISTRY }}/${target}"
+            echo "::group::Tagging ${IMAGE_PATH}"
+
+            if [ ${{ github.ref_type }} = 'branch' ]; then
+              # Always tag the branch name of all services. Use the head_ref for PRs, ref for branches.
+              # Replace / by - in branch names.
+              REF_NAME=`echo "${{ github.head_ref || github.ref }}" | sed -r "s|^refs/heads/(.*)$|\1|" | sed -r "s|/|-|g"`
+              docker tag ${target} "${IMAGE_PATH}:${REF_NAME}"
+            elif [ ${{ github.ref_type }} = 'tag' ]; then
+              # If tag contains only a version string, tag a new release
+              if [[ ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                docker tag ${target} "${IMAGE_PATH}:latest"
+              fi
+              docker tag ${target} "${IMAGE_PATH}:${{ github.ref_name }}"
+            fi
+
+            docker tag ${target} "${IMAGE_PATH}:${{ github.sha }}"
+            echo "::endgroup::"
+          done
 
       - name: Log into registry ${{ env.REGISTRY }}
-        if: env.REGISTRY != null
         uses: famedly/login-action@v2
+        if: env.REGISTRY != null
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ inputs.registry_user }}
           password: ${{ secrets.registry_password || secrets.GITHUB_TOKEN }}
 
-      - name: Publish
+      - name: Push
         if: env.REGISTRY != null
         shell: bash
         run: |
-          IMAGE_PATH=${{ env.REGISTRY }}/${{ inputs.name }}
-          docker image push --all-tags "${IMAGE_PATH}"
+          for target in $(echo "${{ inputs.targets }}" | tr ',' '\n'); do
+            IMAGE_PATH="${{ env.REGISTRY }}/${target}"
+            echo "::group::Pushing ${IMAGE_PATH}"
+            docker image push --all-tags "${IMAGE_PATH}"
+            echo "::endgroup::"
+          done
