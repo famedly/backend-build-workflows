@@ -15,7 +15,7 @@ on:
       registry_user:
         required: false
         type: string
-        default: famedly-ci
+        default: famedly
 
     secrets:
       CI_SSH_PRIVATE_KEY:
@@ -32,9 +32,9 @@ on:
 
 env:
   RUSTC_WRAPPER: cachepot
-  REGISTRY_SNAPSHOTS: docker-nightly.nexus.famedly.de
-  REGISTRY_RELEASES: docker-releases.nexus.famedly.de
-  REGISTRY_OSS: docker-oss.nexus.famedly.de
+  REGISTRY_SNAPSHOTS: registry.famedly.net/nightly
+  REGISTRY_RELEASES: registry.famedly.net/docker-releases
+  REGISTRY_OSS: registry.famedly.net/docker-oss
 
 jobs:
   docker-publish:
