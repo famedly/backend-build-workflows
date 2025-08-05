@@ -15,7 +15,7 @@ on:
       registry_user:
         required: false
         type: string
-        default: famedly
+        default: ${{ vars.HARBOR_REGISTRY_USER }}
 
     secrets:
       CI_SSH_PRIVATE_KEY:
@@ -33,7 +33,7 @@ on:
 env:
   RUSTC_WRAPPER: cachepot
   REGISTRY_SNAPSHOTS: registry.famedly.net/nightly
-  REGISTRY_RELEASES: registry.famedly.net/docker-releases
+  REGISTRY_RELEASES: registry.famedly.net/docker
   REGISTRY_OSS: registry.famedly.net/docker-oss
 
 jobs:
