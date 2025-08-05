@@ -15,7 +15,7 @@ on:
       registry_user:
         required: false
         type: string
-        default: ${{ vars.HARBOR_REGISTRY_USER }}
+        default: ${{ vars.REGISTRY_USER }}
 
     secrets:
       CI_SSH_PRIVATE_KEY:
