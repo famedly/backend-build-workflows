@@ -32,7 +32,7 @@ on:
 
 env:
   RUSTC_WRAPPER: cachepot
-  REGISTRY_SNAPSHOTS: registry.famedly.net/nightly
+  REGISTRY_SNAPSHOTS: registry.famedly.net/docker-nightly
   REGISTRY_RELEASES: registry.famedly.net/docker-releases
   REGISTRY_OSS: registry.famedly.net/docker-oss
 
