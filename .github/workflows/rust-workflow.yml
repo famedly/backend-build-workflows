@@ -27,12 +27,11 @@ on:
         type: string
 
     secrets:
-      CI_SSH_PRIVATE_KEY:
+      FAMEDLY_CRATES_SSH_PRIVATE_KEY:
         required: false
         description: |
           Private SSH key to use for cargo dependencies that need to
-          either be fetched from private GitHub repositories or a
-          private registry.
+          be fetched from a private registry.
       CODECOV_TOKEN:
         required: false
         description: |
@@ -58,11 +57,9 @@ jobs:
         repository: famedly/backend-build-workflows
         ref: ${{ inputs.ref }}
 
-    - uses: ./.github/actions/rust-prepare
+    - uses: ./.github/actions/rust-prepare@v4
       with:
-        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
-        gitlab_user: ${{ secrets.GITLAB_USER }}
-        gitlab_pass: ${{ secrets.GITLAB_PASS }}
+        famedly_crates_ssh_private_key: ${{ secrets.SHIPYARD_SSH_PRIVATE_KEY}}
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4
@@ -96,11 +93,9 @@ jobs:
         repository: famedly/backend-build-workflows
         ref: ${{ inputs.ref }}
 
-    - uses: ./.github/actions/rust-prepare
+    - uses: ./.github/actions/rust-prepare@v4
       with:
-        gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY}}
-        gitlab_user: ${{ secrets.GITLAB_USER }}
-        gitlab_pass: ${{ secrets.GITLAB_PASS }}
+        famedly_crates_ssh_private_key: ${{ secrets.SHIPYARD_SSH_PRIVATE_KEY}}
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4
