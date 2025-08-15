@@ -5,24 +5,22 @@ inputs:
     description: "SSH socket"
     default: "/tmp/ssh_agent.sock"
     required: true
-  gitlab_ssh:
-    description: "Gitlab ssh"
-    required: true
-  gitlab_user:
-    description: "Gitlab username"
-    required: true
-  gitlab_pass:
-    description: "Gitlab username"
-    required: true
   cargo_home:
     description: "Cargo home"
     default: ".cargo"
-  famedly_crates_registry:
-    description: "Famedly registry name"
+  famedly_crate_registry:
+    description: "Whether to enable the Famedly crate registry"
+    required: false
+    default: "false"
+  famedly_crate_registry_name:
+    description: "Crate registry name"
     default: "famedly"
-  famedly_crates_registry_index:
-    description: "URL of famedly registry index"
+  famedly_crate_registry_index:
+    description: "URL of crate registry index"
     default: "ssh://git@ssh.shipyard.rs/famedly/crate-index.git"
+  famedly_crate_registry_index_ssh_privkey:
+    description: "SSH private key for authenticating with crate registry index"
+    required: false
   additional_packages:
     description: "Additional package to install during preparation"
     default: ""
@@ -33,19 +31,14 @@ runs:
     - shell: bash
       env:
         SSH_AUTH_SOCK: ${{ inputs.ssh_auth_sock }}
-        GITLAB_SSH: ${{ inputs.gitlab_ssh }}
+        FAMEDLY_CRATE_REGISTRY_INDEX_SSH_PRIVKEY: ${{ inputs.famedly_crate_registry_index_ssh_privkey }}
       run: $GITHUB_ACTION_PATH/prepare_ssh.sh
-
-    - shell: bash
-      env:
-        GITLAB_USER: ${{ inputs.gitlab_user }}
-        GITLAB_PASS: ${{ inputs.gitlab_pass }}
-      run: $GITHUB_ACTION_PATH/prepare_git.sh
 
     - shell: bash
       env:
         CARGO_HOME: ${{ inputs.cargo_home }}
         ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
-        FAMEDLY_CRATES_REGISTRY: ${{ inputs.famedly_crates_registry }}
-        FAMEDLY_CRATES_REGISTRY_INDEX: ${{ inputs.famedly_crates_registry_index }}
+        FAMEDLY_CRATE_REGISTRY_ENABLED: ${{ inputs.famedly_crate_registry_enabled}}
+        FAMEDLY_CRATE_REGISTRY_NAME: ${{ inputs.famedly_crate_registry_name }}
+        FAMEDLY_CRATE_REGISTRY_INDEX: ${{ inputs.famedly_crate_registry_index }}
       run: $GITHUB_ACTION_PATH/prepare_rust.sh

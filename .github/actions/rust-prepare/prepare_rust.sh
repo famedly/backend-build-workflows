@@ -11,6 +11,8 @@ $SUDO apt-get install -yqq --no-install-recommends "${ADDITIONAL_PACKAGES}"
 
 echo "Setting up development environment"
 
+git config --global --add safe.directory "$(pwd)"
+
 echo "CARGO_HOME = ${HOME}/${CARGO_HOME}"
 mkdir -p "${HOME}/${CARGO_HOME}"
 
@@ -19,10 +21,10 @@ cat << EOF >> "${HOME}/${CARGO_HOME}/config.toml"
 git-fetch-with-cli = true
 EOF
 
-if [ "$FAMEDLY_CRATES_REGISTRY" != "crates-io" ]; then
+if [ "$FAMEDLY_CRATE_REGISTRY_ENABLED" != "false" ]; then
     cat << EOF >> "${HOME}/${CARGO_HOME}/config.toml"
-[registries.${FAMEDLY_CRATES_REGISTRY}]
-index = "${FAMEDLY_CRATES_REGISTRY_INDEX}"
+[registries.${FAMEDLY_CRATE_REGISTRY_NAME}]
+index = "${FAMEDLY_CRATE_REGISTRY_INDEX}"
 EOF
 fi
 
