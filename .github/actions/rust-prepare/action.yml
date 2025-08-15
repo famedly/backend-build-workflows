@@ -5,15 +5,6 @@ inputs:
     description: "SSH socket"
     default: "/tmp/ssh_agent.sock"
     required: true
-  gitlab_ssh:
-    description: "Gitlab ssh"
-    required: true
-  gitlab_user:
-    description: "Gitlab username"
-    required: true
-  gitlab_pass:
-    description: "Gitlab username"
-    required: true
   cargo_home:
     description: "Cargo home"
     default: ".cargo"
@@ -23,6 +14,9 @@ inputs:
   famedly_crates_registry_index:
     description: "URL of famedly registry index"
     default: "ssh://git@ssh.shipyard.rs/famedly/crate-index.git"
+  famedly_crates_ssh_private_key:
+    description: "SSH private key for authenticating with famedly registry index"
+    required: true
   additional_packages:
     description: "Additional package to install during preparation"
     default: ""
@@ -33,14 +27,8 @@ runs:
     - shell: bash
       env:
         SSH_AUTH_SOCK: ${{ inputs.ssh_auth_sock }}
-        GITLAB_SSH: ${{ inputs.gitlab_ssh }}
+        FAMEDLY_CRATES_SSH_PRIVATE_KEY: ${{ inputs.famedly_crates_ssh_private_key }}
       run: $GITHUB_ACTION_PATH/prepare_ssh.sh
-
-    - shell: bash
-      env:
-        GITLAB_USER: ${{ inputs.gitlab_user }}
-        GITLAB_PASS: ${{ inputs.gitlab_pass }}
-      run: $GITHUB_ACTION_PATH/prepare_git.sh
 
     - shell: bash
       env:
