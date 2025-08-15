@@ -4,25 +4,17 @@ inputs:
   ssh_auth_sock:
     description: "SSH socket"
     default: "/tmp/ssh_agent.sock"
-    required: true
-  gitlab_ssh:
-    description: "Gitlab ssh"
-    required: true
-  gitlab_user:
-    description: "Gitlab username"
-    required: true
-  gitlab_pass:
-    description: "Gitlab username"
-    required: true
   cargo_home:
     description: "Cargo home"
     default: ".cargo"
-  famedly_crates_registry:
+  famedly_crate_registry_name:
     description: "Famedly registry name"
     default: "famedly"
-  famedly_crates_registry_index:
+  famedly_crate_registry_index_url:
     description: "URL of famedly registry index"
     default: "ssh://git@ssh.shipyard.rs/famedly/crate-index.git"
+  famedly_crate_registry_ssh_privkey:
+    description: "SSH private key for authenticating with famedly registry index. This needs to be set for a private registry to be configured."
   additional_packages:
     description: "Additional package to install during preparation"
     default: ""
@@ -33,19 +25,9 @@ runs:
     - shell: bash
       env:
         SSH_AUTH_SOCK: ${{ inputs.ssh_auth_sock }}
-        GITLAB_SSH: ${{ inputs.gitlab_ssh }}
-      run: $GITHUB_ACTION_PATH/prepare_ssh.sh
-
-    - shell: bash
-      env:
-        GITLAB_USER: ${{ inputs.gitlab_user }}
-        GITLAB_PASS: ${{ inputs.gitlab_pass }}
-      run: $GITHUB_ACTION_PATH/prepare_git.sh
-
-    - shell: bash
-      env:
         CARGO_HOME: ${{ inputs.cargo_home }}
         ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
-        FAMEDLY_CRATES_REGISTRY: ${{ inputs.famedly_crates_registry }}
-        FAMEDLY_CRATES_REGISTRY_INDEX: ${{ inputs.famedly_crates_registry_index }}
-      run: $GITHUB_ACTION_PATH/prepare_rust.sh
+        FAMEDLY_CRATE_REGISTRY_NAME: ${{ inputs.famedly_crate_registry_name }}
+        FAMEDLY_CRATE_REGISTRY_INDEX_URL: ${{ inputs.famedly_crate_registry_index_url }}
+        FAMEDLY_CRATE_REGISTRY_SSH_PRIVKEY: ${{ inputs.famedly_crate_registry_ssh_privkey }}
+      run: $GITHUB_ACTION_PATH/prepare.sh

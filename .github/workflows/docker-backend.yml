@@ -18,12 +18,11 @@ on:
         default: ${{ vars.REGISTRY_USER }}
 
     secrets:
-      CI_SSH_PRIVATE_KEY:
+      famedly_crate_registry_ssh_privkey:
         required: false
         description: |
           Private SSH key to use for cargo dependencies that need to
-          either be fetched from private GitHub repositories or a
-          private registry.
+          be fetched from a private registry.
       registry_password:
         required: false
         description: |
@@ -31,7 +30,6 @@ on:
           unset, the GitHub token will be used instead.
 
 env:
-  RUSTC_WRAPPER: cachepot
   REGISTRY_SNAPSHOTS: registry.famedly.net/docker-nightly
   REGISTRY_RELEASES: registry.famedly.net/docker-releases
   REGISTRY_OSS: registry.famedly.net/docker-oss
@@ -47,9 +45,9 @@ jobs:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-keyscan git.shipyard.rs >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.CI_SSH_PRIVATE_KEY }}" || true
+          ssh-add - <<< "${{ secrets.famedly_crate_registry_ssh_privkey }}" || true
 
       # TODO: consider adding an intermediate `docker build -t base_image --target base` step
       # if current version rebuilds base stage for each target without caching. Ideally we want

@@ -30,10 +30,10 @@ on:
         description: "List of features to publish; space-separated list"
         type: string
     secrets:
-      CI_SSH_PRIVATE_KEY:
-        description: "SSH key to use for authentication against the crate index"
+      registry_index_ssh_key:
+        description: "SSH key to use for authentication against the registry crate index"
         required: true
-      registry-auth-token:
+      registry_auth_token:
         description: "Auth token for the registry to publish to"
         required: true
 
@@ -45,13 +45,11 @@ jobs:
     container: registry.famedly.net/docker-oss/rust-container:nightly
     steps:
       - uses: actions/checkout@v4
-      - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main
+      - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v4
         with:
-          gitlab_user: ${{ secrets.GITLAB_USER }}
-          gitlab_pass: ${{ secrets.GITLAB_PASS }}
-          gitlab_ssh: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          famedly_crates_registry: ${{ inputs.registry-name }}
-          famedly_crates_registry_index: ${{ inputs.registry-index }}
+          famedly_crate_registry: ${{ inputs.registry-name }}
+          famedly_crate_registry_index_url: ${{ inputs.registry-index }}
+          famedly_crate_registry_ssh_privkey: ${{ secrets.registry-index-ssh-key}}
       - name: Install registry token
         # Uses `echo` (bash built-in) to prevent leaking the token
         # through CLI args in /proc
