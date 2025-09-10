@@ -3,12 +3,12 @@ name: Rust workflow
 on:
   workflow_call:
     inputs:
-      runs-on:
+      runs_on:
         required: false
         type: string
         default: ubuntu-latest
 
-      run-doctests:
+      run_doctests:
         description: |
           Whether to run doctests.
 
@@ -48,7 +48,7 @@ env:
 # Defined CI jobs.
 jobs:
   rust-lints:
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs_on }}
     container: registry.famedly.net/docker-oss/rust-container:nightly
     steps:
     - name: Checkout workflow dependencies
@@ -84,7 +84,7 @@ jobs:
       run: typos # TODO: Use the typos action
 
   rust-tests:
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs_on }}
     container: registry.famedly.net/docker-oss/rust-container:nightly
     steps:
     - name: Checkout workflow dependencies
@@ -109,7 +109,7 @@ jobs:
 
     - name: Doc-test
       shell: bash
-      if: inputs.run-doctests
+      if: inputs.run_doctests
       run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose ${{inputs.test_args}}
 
     - name: Codecov - Upload coverage
