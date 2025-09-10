@@ -30,7 +30,7 @@ on:
         description: "List of features to publish; space-separated list"
         type: string
     secrets:
-      registry_index_ssh_key:
+      famedly_crate_registry_ssh_privkey:
         description: "SSH key to use for authentication against the registry crate index"
         required: true
       registry_auth_token:
@@ -49,7 +49,7 @@ jobs:
         with:
           famedly_crate_registry: ${{ inputs.registry-name }}
           famedly_crate_registry_index_url: ${{ inputs.registry-index }}
-          famedly_crate_registry_ssh_privkey: ${{ secrets.registry-index-ssh-key}}
+          famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey}}
       - name: Install registry token
         # Uses `echo` (bash built-in) to prevent leaking the token
         # through CLI args in /proc

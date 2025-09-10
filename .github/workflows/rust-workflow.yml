@@ -27,12 +27,12 @@ on:
         type: string
 
     secrets:
-      FAMEDLY_CRATE_REGISTRY_SSH_PRIVKEY:
+      famedly_crate_registry_ssh_privkey:
         required: false
         description: |
           Private SSH key to use for cargo dependencies that need to
           be fetched from a private registry.
-      CODECOV_TOKEN:
+      codecov_token:
         required: false
         description: |
           Token to use when publishing code coverage results to
@@ -59,7 +59,7 @@ jobs:
 
     - uses: ./.github/actions/rust-prepare@v4
       with:
-        famedly_crate_registry_ssh_privkey: ${{ secrets.SHIPYARD_SSH_PRIVATE_KEY}}
+        famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey}}
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4
@@ -95,7 +95,7 @@ jobs:
 
     - uses: ./.github/actions/rust-prepare@v4
       with:
-        famedly_crate_registry_ssh_privkey: ${{ secrets.SHIPYARD_SSH_PRIVATE_KEY}}
+        famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey}}
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4
@@ -115,10 +115,10 @@ jobs:
     - name: Codecov - Upload coverage
       uses: codecov/codecov-action@v4
       with:
-        token: ${{secrets.CODECOV_TOKEN}}
+        token: ${{secrets.codecov_token}}
         files: "lcov.info"
 
     - name: Codecov - Upload test results
       uses: codecov/test-results-action@v1
       with:
-        token: ${{secrets.CODECOV_TOKEN}}
+        token: ${{secrets.codecov_token}}
