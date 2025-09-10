@@ -15,11 +15,11 @@ name: Publish Rust crates
 on:
   workflow_call:
     inputs:
-      registry-name:
+      famedly_crate_registry_name:
         description: "Name of the registry to publish to"
         type: string
         default: "famedly"
-      registry-index:
+      famedly_crate_registry_index_url:
         description: "URL of the registry index"
         type: string
         default: "ssh://git@ssh.shipyard.rs/famedly/crate-index.git"
@@ -33,7 +33,7 @@ on:
       famedly_crate_registry_ssh_privkey:
         description: "SSH key to use for authentication against the registry crate index"
         required: true
-      registry_auth_token:
+      famedly_crate_registry_auth_token:
         description: "Auth token for the registry to publish to"
         required: true
 
@@ -47,19 +47,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v4
         with:
-          famedly_crate_registry: ${{ inputs.registry-name }}
-          famedly_crate_registry_index_url: ${{ inputs.registry-index }}
+          famedly_crate_registry: ${{ inputs.famedly_crate_registry_name }}
+          famedly_crate_registry_index_url: ${{ inputs.famedly_crate_registry_index_url }}
           famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey}}
       - name: Install registry token
         # Uses `echo` (bash built-in) to prevent leaking the token
         # through CLI args in /proc
         run: |
           cat << EOF > "${CARGO_HOME}/credentials.toml"
-          [${{ inputs.registry-name != 'crates-io' && format('registries.{0}', inputs.registry-name) || 'registry' }}]
-          token = "${{ secrets.registry-auth-token }}"
+          [${{ inputs.famedly_crate_registry_name != 'crates-io' && format('registries.{0}', inputs.famedly_crate_registry_name) || 'registry' }}]
+          token = "${{ secrets.famedly_crate_registry_auth_token }}"
           EOF
       - name: Publish
         run: |
-          cargo publish ${{ inputs.registry-name != 'crates-io' && format('--registry {0}', inputs.registry-name) || '' }} \
+          cargo publish ${{ inputs.famedly_crate_registry_name != 'crates-io' && format('--registry {0}', inputs.famedly_crate_registry_name) || '' }} \
             ${{ inputs.packages != null && format('--package {0}', inputs.packages) || '' }} \
             ${{ inputs.features != null && format('--features {0}', inputs.features) || '' }}
