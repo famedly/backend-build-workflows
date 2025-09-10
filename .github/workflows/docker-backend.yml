@@ -12,10 +12,10 @@ on:
         required: true
         type: string
 
-      registry_user:
+      oci_registry_user:
         required: false
         type: string
-        default: ${{ vars.REGISTRY_USER }}
+        default: ${{ vars.OCI_REGISTRY_USER }}
 
     secrets:
       famedly_crate_registry_ssh_privkey:
@@ -23,16 +23,16 @@ on:
         description: |
           Private SSH key to use for cargo dependencies that need to
           be fetched from a private registry.
-      registry_password:
+      oci_registry_password:
         required: false
         description: |
           The password to use to push to the docker registry. If left
           unset, the GitHub token will be used instead.
 
 env:
-  REGISTRY_SNAPSHOTS: registry.famedly.net/docker-nightly
-  REGISTRY_RELEASES: registry.famedly.net/docker-releases
-  REGISTRY_OSS: registry.famedly.net/docker-oss
+  OCI_REGISTRY_SNAPSHOTS: registry.famedly.net/docker-nightly
+  OCI_REGISTRY_RELEASES: registry.famedly.net/docker-releases
+  OCI_REGISTRY_OSS: registry.famedly.net/docker-oss
 
 jobs:
   docker-publish:
@@ -70,28 +70,28 @@ jobs:
             echo "::endgroup::"
           done
 
-      - name: Resolve registry to push
+      - name: Resolve OCI registry to push
         shell: bash
         run: |
           if [ ${{ github.ref_type }} = 'branch' ]; then
-            echo "REGISTRY=${{ env.REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
+            echo "OCI_REGISTRY=${{ env.OCI_REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
           elif [ ${{ github.ref_type }} = 'tag' ]; then
             if [[ ${{ inputs.oss }} == true ]]; then
-              echo "REGISTRY=${{ env.REGISTRY_OSS }}" >> $GITHUB_ENV
+              echo "OCI_REGISTRY=${{ env.OCI_REGISTRY_OSS }}" >> $GITHUB_ENV
             else
-              echo "REGISTRY=${{ env.REGISTRY_RELEASES }}" >> $GITHUB_ENV
+              echo "OCI_REGISTRY=${{ env.OCI_REGISTRY_RELEASES }}" >> $GITHUB_ENV
             fi
             if ! [[ ${{ github.ref_name }} =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-              echo "REGISTRY=${{ env.REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
+              echo "OCI_REGISTRY=${{ env.OCI_REGISTRY_SNAPSHOTS }}" >> $GITHUB_ENV
             fi
           fi
 
       - name: Tag
         shell: bash
-        if: env.REGISTRY != null
+        if: env.OCI_REGISTRY != null
         run: |
           for target in $(echo "${{ inputs.targets }}" | tr ',' '\n'); do
-            IMAGE_PATH="${{ env.REGISTRY }}/${target}"
+            IMAGE_PATH="${{ env.OCI_REGISTRY }}/${target}"
             echo "::group::Tagging ${IMAGE_PATH}"
 
             if [ ${{ github.ref_type }} = 'branch' ]; then
@@ -111,20 +111,20 @@ jobs:
             echo "::endgroup::"
           done
 
-      - name: Log into registry ${{ env.REGISTRY }}
+      - name: Log into registry ${{ env.OCI_REGISTRY }}
         uses: famedly/login-action@v2
-        if: env.REGISTRY != null
+        if: env.OCI_REGISTRY != null
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ inputs.registry_user }}
-          password: ${{ secrets.registry_password || secrets.GITHUB_TOKEN }}
+          registry: ${{ env.OCI_REGISTRY }}
+          username: ${{ inputs.oci_registry_user }}
+          password: ${{ secrets.oci_registry_password || secrets.GITHUB_TOKEN }}
 
       - name: Push
-        if: env.REGISTRY != null
+        if: env.OCI_REGISTRY != null
         shell: bash
         run: |
           for target in $(echo "${{ inputs.targets }}" | tr ',' '\n'); do
-            IMAGE_PATH="${{ env.REGISTRY }}/${target}"
+            IMAGE_PATH="${{ env.OCI_REGISTRY }}/${target}"
             echo "::group::Pushing ${IMAGE_PATH}"
             docker image push --all-tags "${IMAGE_PATH}"
             echo "::endgroup::"
