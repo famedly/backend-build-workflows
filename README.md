@@ -56,8 +56,8 @@ Behavioural notes:
 | v3 (old) | v4 (new) |
 | --- | --- | --- |
 | `inputs.registry_user` | `inputs.oci_registry_user` |
-| `secrets.CI_SSH_PRIVATE_KEY` | `secrets.famedly_crate_registry_ssh_privkey` |
-| `secrets.registry_password` | `secrets.oci_registry_password` |
+| `secrets.CI_SSH_PRIVATE_KEY` | `secrets.CRATE_REGISTRY_SSH_PRIVKEY` |
+| `secrets.registry_password` | `secrets.OCI_REGISTRY_PASSWORD` |
 | `REGISTRY_SNAPSHOTS/RELEASES/OSS` | `OCI_REGISTRY_SNAPSHOTS/RELEASES/OSS` |
 | `REGISTRY` | `OCI_REGISTRY` |
 
@@ -67,8 +67,8 @@ Behavioural notes:
 | v3 (old) | v4 (new) |
 | --- | --- | --- |
 | `uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main` | `@v4` |
-| `secrets.CI_SSH_PRIVATE_KEY` | `secrets.famedly_crate_registry_ssh_privkey` |
-| `secrets.registry-auth-token` | `secrets.registry_auth_token` |
+| `secrets.CI_SSH_PRIVATE_KEY` | `secrets.CRATE_REGISTRY_SSH_PRIVKEY` |
+| `secrets.registry-auth-token` | `secrets.CRATE_REGISTRY_AUTH_TOKEN` |
 | `with.famedly_crates_registry` | `with.famedly_crate_registry` | 
 | `with.famedly_crates_registry_index` | `with.famedly_crate_registry_index_url` |
 ### Workflow: `.github/workflows/rust-workflow.yml`
@@ -76,8 +76,8 @@ Behavioural notes:
 
 | v3 (old) | v4 (new) |
 | --- | --- | --- |
-| `secrets.CI_SSH_PRIVATE_KEY` | `secrets.famedly_crate_registry_ssh_privkey` |
-| `secrets.CODECOV_TOKEN` | `secrets.codecov_token` |
+| `secrets.CI_SSH_PRIVATE_KEY` | `secrets.CRATE_REGISTRY_SSH_PRIVKEY` |
+| `secrets.CODECOV_TOKEN` | `secrets.CODECOV_TOKEN` |
 | `uses: ./.github/actions/rust-prepare` | `uses: ./.github/actions/rust-prepare@v4` |
 ### Required user actions
 - Update all `uses:` references to the v4 tag.
@@ -92,9 +92,9 @@ Rust prepare in a job:
 ```yaml
 - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v4
   with:
-    famedly_crate_registry_name: famedly
-    famedly_crate_registry_index_url: ssh://git@ssh.shipyard.rs/famedly/crate-index.git
-    famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey }}
+    crate_registry_name: famedly
+    crate_registry_index_url: ssh://git@ssh.shipyard.rs/famedly/crate-index.git
+    crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}
 ```
 
 Publish crates workflow call:
@@ -104,11 +104,9 @@ jobs:
   publish:
     uses: famedly/backend-build-workflows/.github/workflows/publish-crate.yml@v4
     secrets:
-      famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey }}
-      famedly_crate_registry_auth_token: ${{ secrets.famedly_crate_registry_auth_token }}
+      CRATE_REGISTRY_SSH_PRIVKEY: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}
+      CRATE_REGISTRY_AUTH_TOKEN: ${{ secrets.CRATE_REGISTRY_AUTH_TOKEN }}
     with:
-      famedly_crate_registry_name: famedly
-      famedly_crate_registry_index_url: ssh://git@ssh.shipyard.rs/famedly/crate-index.git
 ```
 
 Docker backend workflow call:
@@ -121,7 +119,6 @@ jobs:
       targets: service-a,service-b
       oci_registry_user: ${{ vars.OCI_REGISTRY_USER }}
     secrets:
-      famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey }}
-      oci_registry_password: ${{ secrets.oci_registry_password }}
+      CRATE_REGISTRY_SSH_PRIVKEY: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}
+      OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_PASSWORD }}
 ```
-

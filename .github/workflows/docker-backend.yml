@@ -18,12 +18,12 @@ on:
         default: ${{ vars.OCI_REGISTRY_USER }}
 
     secrets:
-      crate_registry_ssh_privkey:
+      CRATE_REGISTRY_SSH_PRIVKEY:
         required: false
         description: |
           Private SSH key to use for cargo dependencies that need to
           be fetched from a private registry.
-      oci_registry_password:
+      OCI_REGISTRY_PASSWORD:
         required: false
         description: |
           The password to use to push to the docker registry. If left
@@ -47,7 +47,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan git.shipyard.rs >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.crate_registry_ssh_privkey }}" || true
+          ssh-add - <<< "${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}" || true
 
       # TODO: consider adding an intermediate `docker build -t base_image --target base` step
       # if current version rebuilds base stage for each target without caching. Ideally we want
@@ -117,7 +117,7 @@ jobs:
         with:
           registry: ${{ env.OCI_REGISTRY }}
           username: ${{ inputs.oci_registry_user }}
-          password: ${{ secrets.oci_registry_password || secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.OCI_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
 
       - name: Push
         if: env.OCI_REGISTRY != null

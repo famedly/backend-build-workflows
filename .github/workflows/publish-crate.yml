@@ -30,10 +30,10 @@ on:
         description: "List of features to publish; space-separated list"
         type: string
     secrets:
-      crate_registry_ssh_privkey:
+      CRATE_REGISTRY_SSH_PRIVKEY:
         description: "SSH key to use for authentication against the registry crate index"
         required: true
-      crate_registry_auth_token:
+      CRATE_REGISTRY_AUTH_TOKEN:
         description: "Auth token for the registry to publish to"
         required: true
 
@@ -45,18 +45,18 @@ jobs:
     container: registry.famedly.net/docker-oss/rust-container:nightly
     steps:
       - uses: actions/checkout@v4
-      - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v4
+      - uses: ./.github/actions/rust-prepare@v4
         with:
           crate_registry_name: ${{ inputs.crate_registry_name }}
           crate_registry_index_url: ${{ inputs.crate_registry_index_url }}
-          crate_registry_ssh_privkey: ${{ secrets.crate_registry_ssh_privkey}}
+          crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY}}
       - name: Install registry token
         # Uses `echo` (bash built-in) to prevent leaking the token
         # through CLI args in /proc
         run: |
           cat << EOF > "${CARGO_HOME}/credentials.toml"
           [${{ inputs.crate_registry_name != 'crates-io' && format('registries.{0}', inputs.crate_registry_name) || 'registry' }}]
-          token = "${{ secrets.crate_registry_auth_token }}"
+          token = "${{ secrets.CRATE_REGISTRY_AUTH_TOKEN }}"
           EOF
       - name: Publish
         run: |
