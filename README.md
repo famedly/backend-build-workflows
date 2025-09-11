@@ -112,9 +112,9 @@ Rust prepare in a job:
 ```yaml
 - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v4
   with:
-    crate_registry_name: famedly
-    crate_registry_index_url: ssh://git@ssh.shipyard.rs/famedly/crate-index.git
-    crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}
+    crate_registry_name: "${{ vars.CRATE_REGISTRY_NAME }}"
+    crate_registry_index_url: "${{ vars.CRATE_REGISTRY_INDEX_URL }}
+    crate_registry_ssh_privkey: "${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}"
 ```
 
 Publish crates workflow call:
@@ -124,8 +124,8 @@ jobs:
   publish:
     uses: famedly/backend-build-workflows/.github/workflows/publish-crate.yml@v4
     secrets:
-      CRATE_REGISTRY_SSH_PRIVKEY: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}
-      CRATE_REGISTRY_AUTH_TOKEN: ${{ secrets.CRATE_REGISTRY_AUTH_TOKEN }}
+      CRATE_REGISTRY_SSH_PRIVKEY: "${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}"
+      CRATE_REGISTRY_AUTH_TOKEN: "${{ secrets.CRATE_REGISTRY_AUTH_TOKEN }}"
     with:
 ```
 
@@ -136,9 +136,9 @@ jobs:
   publish:
     uses: famedly/backend-build-workflows/.github/workflows/docker-backend.yml@v4
     with:
-      targets: service-a,service-b
-      oci_registry_user: ${{ vars.OCI_REGISTRY_USER }}
+      targets: "service-a,service-b"
+      oci_registry_user: "${{ vars.OCI_REGISTRY_USER }}"
     secrets:
-      CRATE_REGISTRY_SSH_PRIVKEY: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}
-      OCI_REGISTRY_PASSWORD: ${{ secrets.OCI_REGISTRY_PASSWORD }}
+      CRATE_REGISTRY_SSH_PRIVKEY: "${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}"
+      OCI_REGISTRY_PASSWORD: "${{ secrets.OCI_REGISTRY_PASSWORD }}"
 ```
