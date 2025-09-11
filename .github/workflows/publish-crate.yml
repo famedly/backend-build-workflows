@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v4
         with:
-          famedly_crate_registry: ${{ inputs.famedly_crate_registry_name }}
+          famedly_crate_registry_name: ${{ inputs.famedly_crate_registry_name }}
           famedly_crate_registry_index_url: ${{ inputs.famedly_crate_registry_index_url }}
           famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey}}
       - name: Install registry token
