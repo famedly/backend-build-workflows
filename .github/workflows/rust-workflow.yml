@@ -27,7 +27,7 @@ on:
         type: string
 
     secrets:
-      famedly_crate_registry_ssh_privkey:
+      crate_registry_ssh_privkey:
         required: false
         description: |
           Private SSH key to use for cargo dependencies that need to
@@ -59,7 +59,7 @@ jobs:
 
     - uses: ./.github/actions/rust-prepare@v4
       with:
-        famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey}}
+        crate_registry_ssh_privkey: ${{ secrets.crate_registry_ssh_privkey}}
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4
@@ -95,7 +95,7 @@ jobs:
 
     - uses: ./.github/actions/rust-prepare@v4
       with:
-        famedly_crate_registry_ssh_privkey: ${{ secrets.famedly_crate_registry_ssh_privkey}}
+        crate_registry_ssh_privkey: ${{ secrets.crate_registry_ssh_privkey}}
 
     - name: Checkout the repository to test
       uses: actions/checkout@v4

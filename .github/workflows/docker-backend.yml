@@ -18,7 +18,7 @@ on:
         default: ${{ vars.OCI_REGISTRY_USER }}
 
     secrets:
-      famedly_crate_registry_ssh_privkey:
+      crate_registry_ssh_privkey:
         required: false
         description: |
           Private SSH key to use for cargo dependencies that need to
@@ -47,7 +47,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan git.shipyard.rs >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.famedly_crate_registry_ssh_privkey }}" || true
+          ssh-add - <<< "${{ secrets.crate_registry_ssh_privkey }}" || true
 
       # TODO: consider adding an intermediate `docker build -t base_image --target base` step
       # if current version rebuilds base stage for each target without caching. Ideally we want
@@ -63,7 +63,7 @@ jobs:
             echo "::group::Building ${target}"
 
             docker build --pull -t ${target} --target ${target} \
-              --build-arg CARGO_REGISTRIES_FAMEDLY_INDEX="${{ vars.CARGO_REGISTRIES_FAMEDLY_INDEX }}" \
+              --build-arg CARGO_REGISTRIES_FAMEDLY_INDEX="${{ vars.CRATE_REGISTRY_INDEX_URL }}" \
               --build-arg CARGO_BUILD_RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS}" \
               --ssh default .
 

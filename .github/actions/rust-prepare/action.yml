@@ -7,13 +7,13 @@ inputs:
   cargo_home:
     description: "Cargo home"
     default: ".cargo"
-  famedly_crate_registry_name:
+  crate_registry_name:
     description: "Famedly registry name"
     default: "famedly"
-  famedly_crate_registry_index_url:
+  crate_registry_index_url:
     description: "URL of famedly registry index"
     default: "ssh://git@ssh.shipyard.rs/famedly/crate-index.git"
-  famedly_crate_registry_ssh_privkey:
+  crate_registry_ssh_privkey:
     description: "SSH private key for authenticating with famedly registry index. This needs to be set for a private registry to be configured."
   additional_packages:
     description: "Additional package to install during preparation"
@@ -27,7 +27,7 @@ runs:
         SSH_AUTH_SOCK: ${{ inputs.ssh_auth_sock }}
         CARGO_HOME: ${{ inputs.cargo_home }}
         ADDITIONAL_PACKAGES: ${{ inputs.additional_packages }}
-        FAMEDLY_CRATE_REGISTRY_NAME: ${{ inputs.famedly_crate_registry_name }}
-        FAMEDLY_CRATE_REGISTRY_INDEX_URL: ${{ inputs.famedly_crate_registry_index_url }}
-        FAMEDLY_CRATE_REGISTRY_SSH_PRIVKEY: ${{ inputs.famedly_crate_registry_ssh_privkey }}
+        CRATE_REGISTRY_NAME: ${{ inputs.crate_registry_name }}
+        CRATE_REGISTRY_INDEX_URL: ${{ inputs.crate_registry_index_url }}
+        CRATE_REGISTRY_SSH_PRIVKEY: ${{ inputs.crate_registry_ssh_privkey }}
       run: $GITHUB_ACTION_PATH/prepare.sh

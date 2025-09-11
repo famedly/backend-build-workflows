@@ -25,16 +25,16 @@ echo "CARGO_HOME = ${HOME}/${CARGO_HOME}"
 mkdir -p "${HOME}/${CARGO_HOME}"
 
 # Decide public/private mode based on presence of private key
-if [[ -z "${FAMEDLY_CRATE_REGISTRY_SSH_PRIVKEY:-}" ]]; then
+if [[ -z "${CRATE_REGISTRY_SSH_PRIVKEY:-}" ]]; then
 	echo "No private registry SSH key provided. Configuring for public builds."
-	export FAMEDLY_CRATE_REGISTRY_NAME="crates-io"
+	export CRATE_REGISTRY_NAME="crates-io"
 else
 	echo "Private registry credentials detected. Configuring SSH and private registry access."
 	USER_NAME="$(whoami)"
 	SSH_HOME="$(getent passwd "$USER_NAME" | cut -d: -f6)"
 	ssh-agent -a "${SSH_AUTH_SOCK}" > /dev/null
 	echo "SSH_AUTH_SOCK=${SSH_AUTH_SOCK}" >> "$GITHUB_ENV"
-	ssh-add -vvv - <<< "${FAMEDLY_CRATE_REGISTRY_SSH_PRIVKEY}"$'\n'
+	ssh-add -vvv - <<< "${CRATE_REGISTRY_SSH_PRIVKEY}"$'\n'
 	mkdir -p "$SSH_HOME/.ssh"
 	{
 		ssh-keyscan -H ssh.shipyard.rs
@@ -46,19 +46,19 @@ cat << EOF >> "${HOME}/${CARGO_HOME}/config.toml"
 git-fetch-with-cli = true
 EOF
 
-if [ "$FAMEDLY_CRATE_REGISTRY_NAME" != "crates-io" ]; then
+if [ "$CRATE_REGISTRY_NAME" != "crates-io" ]; then
 	cat << EOF >> "${HOME}/${CARGO_HOME}/config.toml"
-[registries.${FAMEDLY_CRATE_REGISTRY_NAME}]
-index = "${FAMEDLY_CRATE_REGISTRY_INDEX_URL}"
+[registries.${CRATE_REGISTRY_NAME}]
+index = "${CRATE_REGISTRY_INDEX_URL}"
 EOF
 fi
 
 echo "CARGO_HOME=${HOME}/${CARGO_HOME}" >> "$GITHUB_ENV"
 
 # Persist registry settings for subsequent GitHub Actions steps
-echo "FAMEDLY_CRATE_REGISTRY_NAME=${FAMEDLY_CRATE_REGISTRY_NAME}" >> "$GITHUB_ENV"
-if [[ -n "${FAMEDLY_CRATE_REGISTRY_INDEX_URL:-}" ]]; then
-	echo "FAMEDLY_CRATE_REGISTRY_INDEX_URL=${FAMEDLY_CRATE_REGISTRY_INDEX_URL}" >> "$GITHUB_ENV"
+echo "CRATE_REGISTRY_NAME=${CRATE_REGISTRY_NAME}" >> "$GITHUB_ENV"
+if [[ -n "${CRATE_REGISTRY_INDEX_URL:-}" ]]; then
+	echo "CRATE_REGISTRY_INDEX_URL=${CRATE_REGISTRY_INDEX_URL}" >> "$GITHUB_ENV"
 fi
 
 echo "Preparations finished"
