@@ -15,6 +15,25 @@ jobs:
       name: bar # name of service
 ```
 
+## GitHub Actions variables and secrets (v4)
+
+### Variables
+
+| Name | Used by | Required | Purpose |
+| --- | --- | --- | --- |
+| `OCI_REGISTRY_USER` | `.github/workflows/docker-backend.yml` (default for `inputs.oci_registry_user`) | Optional | Username for logging into the target OCI registry. |
+| `CRATE_REGISTRY_INDEX_URL` | `.github/workflows/docker-backend.yml` (Docker build arg `CARGO_REGISTRIES_FAMEDLY_INDEX`) | Optional | URL of the crate registry index used inside Docker builds. |
+
+### Secrets
+
+| Name | Used by | Required | Purpose |
+| --- | --- | --- | --- |
+| `CRATE_REGISTRY_SSH_PRIVKEY` | `.github/workflows/docker-backend.yml`, `.github/workflows/publish-crate.yml`, `.github/workflows/rust-workflow.yml` | Required in `publish-crate`; optional elsewhere | SSH private key for accessing the private crate registry index. |
+| `CRATE_REGISTRY_AUTH_TOKEN` | `.github/workflows/publish-crate.yml` | Required | Auth token used when publishing crates to the configured registry. |
+| `OCI_REGISTRY_PASSWORD` | `.github/workflows/docker-backend.yml` | Optional (falls back to `GITHUB_TOKEN`) | Password for logging into the target OCI registry when pushing images. |
+| `CODECOV_TOKEN` | `.github/workflows/rust-workflow.yml` | Optional | Token for uploading coverage and test results to Codecov. |
+| `GITHUB_TOKEN` | `.github/workflows/docker-backend.yml` | Implicit (provided by GitHub) | Fallback token for OCI login when `OCI_REGISTRY_PASSWORD` is not set. |
+
 should take care of everything
 
 ## Complex service with subfolders
