@@ -74,7 +74,7 @@ Behavioural notes:
 ### Workflow: `.github/workflows/docker-backend.yml`
 ### Renamed inputs and environment variables
 | v3 (old) | v4 (new) |
-| --- | --- | --- |
+| --- | --- |
 | `inputs.registry_user` | `inputs.oci_registry_user` |
 | `secrets.CI_SSH_PRIVATE_KEY` | `secrets.CRATE_REGISTRY_SSH_PRIVKEY` |
 | `secrets.registry_password` | `secrets.OCI_REGISTRY_PASSWORD` |
@@ -85,7 +85,7 @@ Behavioural notes:
 #### Renamed inputs and secrets
 
 | v3 (old) | v4 (new) |
-| --- | --- | --- |
+| --- | --- |
 | `uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main` | `@v4` |
 | `secrets.CI_SSH_PRIVATE_KEY` | `secrets.CRATE_REGISTRY_SSH_PRIVKEY` |
 | `secrets.registry-auth-token` | `secrets.CRATE_REGISTRY_AUTH_TOKEN` |
@@ -95,7 +95,7 @@ Behavioural notes:
 #### Renamed inputs
 
 | v3 (old) | v4 (new) |
-| --- | --- | --- |
+| --- | --- |
 | `secrets.CI_SSH_PRIVATE_KEY` | `secrets.CRATE_REGISTRY_SSH_PRIVKEY` |
 | `secrets.CODECOV_TOKEN` | `secrets.CODECOV_TOKEN` |
 | `uses: ./.github/actions/rust-prepare` | `uses: ./.github/actions/rust-prepare@v4` |
@@ -107,13 +107,13 @@ Behavioural notes:
 
 ### Minimal examples (v4)
 
-Rust prepare in a job:
+Prepare rust action, with custom crate registry:
 
 ```yaml
 - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v4
   with:
     crate_registry_name: "${{ vars.CRATE_REGISTRY_NAME }}"
-    crate_registry_index_url: "${{ vars.CRATE_REGISTRY_INDEX_URL }}
+    crate_registry_index_url: "${{ vars.CRATE_REGISTRY_INDEX_URL }}"
     crate_registry_ssh_privkey: "${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY }}"
 ```
 
