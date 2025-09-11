@@ -61,11 +61,11 @@ jobs:
 
 | v3 (old) | v4 (new) | Notes |
 | --- | --- | --- |
-| `famedly_crates_registry` | `famedly_crate_registry` ||
-| `famedly_crates_registry_index` | `famedly_crate_registry_index_url` ||
-| (new) | `famedly_crate_registry_ssh_privkey` | SSH private key for the private registry index. Optional; when omitted, builds use `crates-io`. |
-| `FAMEDLY_CRATES_REGISTRY` | `FAMEDLY_CRATE_REGISTRY` ||
-| `FAMEDLY_CRATES_REGISTRY_INDEX` | `FAMEDLY_CRATE_REGISTRY_INDEX` ||
+| `famedly_crates_registry` | `crate_registry_name` ||
+| `famedly_crates_registry_index` | `crate_registry_index_url` ||
+| (new) | `crate_registry_ssh_privkey` | SSH private key for the private registry index. Optional; when omitted, builds use `crates-io`. |
+| `FAMEDLY_CRATES_REGISTRY` | `CRATE_REGISTRY_NAME` ||
+| `FAMEDLY_CRATES_REGISTRY_INDEX` | `CRATE_REGISTRY_INDEX_URL` ||
 
 Behavioural notes:
 - If `famedly_crate_registry_ssh_privkey` is not provided, the action configures `CARGO_HOME` for public `crates-io` only.
@@ -89,8 +89,8 @@ Behavioural notes:
 | `uses: famedly/backend-build-workflows/.github/actions/rust-prepare@main` | `@v4` |
 | `secrets.CI_SSH_PRIVATE_KEY` | `secrets.CRATE_REGISTRY_SSH_PRIVKEY` |
 | `secrets.registry-auth-token` | `secrets.CRATE_REGISTRY_AUTH_TOKEN` |
-| `with.famedly_crates_registry` | `with.famedly_crate_registry` | 
-| `with.famedly_crates_registry_index` | `with.famedly_crate_registry_index_url` |
+| `with.famedly_crates_registry` | `with.crate_registry_name` | 
+| `with.famedly_crates_registry_index` | `with.crate_registry_index_url` |
 ### Workflow: `.github/workflows/rust-workflow.yml`
 #### Renamed inputs
 
