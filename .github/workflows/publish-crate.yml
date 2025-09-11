@@ -18,11 +18,11 @@ on:
       crate_registry_name:
         description: "Name of the registry to publish to"
         type: string
-        default: "famedly"
+        default: "${{ vars.CRATE_REGISTRY_NAME }}"
       crate_registry_index_url:
         description: "URL of the registry index"
         type: string
-        default: "ssh://git@ssh.shipyard.rs/famedly/crate-index.git"
+        default: "${{ vars.CRATE_REGISTRY_INDEX_URL }}"
       packages:
         description: "List of packages to publish; space-separated list"
         type: string

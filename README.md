@@ -19,10 +19,11 @@ jobs:
 
 ### Variables
 
-| Name | Used by | Required | Purpose |
+| Name | Where it is consumed | Required | Purpose |
 | --- | --- | --- | --- |
-| `OCI_REGISTRY_USER` | `.github/workflows/docker-backend.yml` (default for `inputs.oci_registry_user`) | Optional | Username for logging into the target OCI registry. |
-| `CRATE_REGISTRY_INDEX_URL` | `.github/workflows/docker-backend.yml` (Docker build arg `CARGO_REGISTRIES_FAMEDLY_INDEX`) | Optional | URL of the crate registry index used inside Docker builds. |
+| `OCI_REGISTRY_USER` | docker-backend: default value for workflow input `inputs.oci_registry_user` | Optional | Username for logging into the target OCI registry. |
+| `CRATE_REGISTRY_NAME` | rust-prepare: default value for action input `inputs.crate_registry_name` | Optional | Name of the crate registry to configure (e.g., `famedly` or `crates-io`). |
+| `CRATE_REGISTRY_INDEX_URL` | rust-prepare: default value for action input `inputs.crate_registry_index_url`; docker-backend: passed to Docker as build-arg `CARGO_REGISTRIES_FAMEDLY_INDEX` | Optional | URL of the crate registry index used by the action and inside Docker builds. |
 
 ### Secrets
 
