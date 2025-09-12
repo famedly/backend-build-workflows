@@ -57,7 +57,7 @@ jobs:
         repository: famedly/backend-build-workflows
         ref: ${{ inputs.ref }}
 
-    - uses: ./.github/actions/rust-prepare@v4
+    - uses: ./.github/actions/rust-prepare
       with:
         crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY}}
 

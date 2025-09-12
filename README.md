@@ -79,7 +79,7 @@ Behavioural notes:
 | `secrets.CI_SSH_PRIVATE_KEY` | `secrets.CRATE_REGISTRY_SSH_PRIVKEY` |
 | `secrets.registry_password` | `secrets.OCI_REGISTRY_PASSWORD` |
 | `REGISTRY_SNAPSHOTS/RELEASES/OSS` | `OCI_REGISTRY_SNAPSHOTS/RELEASES/OSS` |
-| `REGISTRY` | `OCI_REGISTRY` |
+| `REGISTRY` | `OCI_REGISTRY` | 
 
 ### Workflow: `.github/workflows/publish-crate.yml`
 #### Renamed inputs and secrets

@@ -42,10 +42,10 @@ jobs:
     # Enforce only publishing tagged commits
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    container: registry.famedly.net/docker-oss/rust-container:nightly
+    container: registry.famedly.net/docker-oss/rust-container:nightly 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/rust-prepare@v4
+      - uses: ./.github/actions/rust-prepare
         with:
           crate_registry_name: ${{ inputs.crate_registry_name }}
           crate_registry_index_url: ${{ inputs.crate_registry_index_url }}
