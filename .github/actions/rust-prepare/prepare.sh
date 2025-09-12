@@ -13,8 +13,8 @@ else
 	SUDO="sudo"
 fi
 
-echo "Installing additional packages: ${ADDITIONAL_PACKAGES}"
-if [[ -n "${ADDITIONAL_PACKAGES}" ]]; then
+if [[ -n "${ADDITIONAL_PACKAGES:-}" ]]; then
+  echo "Installing additional packages: ${ADDITIONAL_PACKAGES}"
 	$SUDO apt-get install -yqq --no-install-recommends "${ADDITIONAL_PACKAGES}"
 else
 	echo "No additional packages specified. Skipping installation."
