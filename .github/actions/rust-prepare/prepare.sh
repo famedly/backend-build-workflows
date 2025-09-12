@@ -15,11 +15,17 @@ fi
 
 if [[ -n "${ADDITIONAL_PACKAGES:-}" ]]; then
   echo "Installing additional packages: ${ADDITIONAL_PACKAGES}"
-	$SUDO apt-get install -yqq --no-install-recommends "${ADDITIONAL_PACKAGES}"
+	# We want to be explicit about word splitting here.
+	# https://github.com/koalaman/shellcheck/wiki/Sc2046
+	read -ra packages <<< "${ADDITIONAL_PACKAGES}"
+	$SUDO apt-get install -yqq --no-install-recommends "${packages[@]}"
 else
 	echo "No additional packages specified. Skipping installation."
 fi
 
+
+# TODO: Don't set CARGO_HOME to a relative path. It is supposed to be an absolute path, this is potentially problematic.
+# However, it works for now and any change to this needs to be thoroughly tested as github actions is really weird about runner home directories.
 echo "Setting up build environment"
 echo "CARGO_HOME = ${HOME}/${CARGO_HOME}"
 mkdir -p "${HOME}/${CARGO_HOME}"
