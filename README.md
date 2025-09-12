@@ -96,6 +96,8 @@ Behavioural notes:
 
 | v3 (old) | v4 (new) |
 | --- | --- |
+| `inputs.runs-on` | `inputs.runs_on` |
+| `inputs.run-doctests` | `inputs.run_doctests` |
 | `secrets.CI_SSH_PRIVATE_KEY` | `secrets.CRATE_REGISTRY_SSH_PRIVKEY` |
 | `secrets.CODECOV_TOKEN` | `secrets.CODECOV_TOKEN` |
 | `uses: ./.github/actions/rust-prepare` | `uses: ./.github/actions/rust-prepare@v4` |
