@@ -49,7 +49,7 @@ env:
 jobs:
   rust-lints:
     runs-on: ${{ inputs.runs_on }}
-    container: registry.famedly.net/docker-oss/rust-container:nightly
+    container: ghcr.io/famedly/rust-container:nightly
     steps:
     - name: Checkout workflow dependencies
       uses: actions/checkout@v4
