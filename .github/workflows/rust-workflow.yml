@@ -18,13 +18,21 @@ on:
         type: boolean
         default: true
 
-      clippy_args: {required: false, type: string, default: ""}
-      test_args: {required: false, type: string, default: ""}
-      testcov_args: {required: false, type: string, default: ""}
-      udeps_args: {required: false, type: string, default: ""}
+      clippy_args: { required: false, type: string, default: "" }
+      test_args: { required: false, type: string, default: "" }
+      testcov_args: { required: false, type: string, default: "" }
+      udeps_args: { required: false, type: string, default: "" }
+
       ref:
         description: "The ref/version of this workflow; used to pull the correct dependency versions"
         type: string
+
+      oss:
+        description: |
+          Whether the project in question is open-source. This will run REUSE compliance checks.
+        required: false
+        type: boolean
+        default: false
 
     secrets:
       CRATE_REGISTRY_SSH_PRIVKEY:
@@ -47,78 +55,90 @@ env:
 
 # Defined CI jobs.
 jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: REUSE Compliance Check
+        if: inputs.oss == true
+        uses: fsfe/reuse-action@v5
+      - name: Dependency license check
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check bans licenses sources
+
   rust-lints:
     runs-on: ${{ inputs.runs_on }}
     container: ghcr.io/famedly/rust-container:nightly
     steps:
-    - name: Checkout workflow dependencies
-      uses: actions/checkout@v4
-      with:
-        repository: famedly/backend-build-workflows
-        ref: ${{ inputs.ref }}
+      - name: Checkout workflow dependencies
+        uses: actions/checkout@v4
+        with:
+          repository: famedly/backend-build-workflows
+          ref: ${{ inputs.ref }}
 
-    - uses: ./.github/actions/rust-prepare
-      with:
-        crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY}}
+      - uses: ./.github/actions/rust-prepare
+        with:
+          crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY}}
 
-    - name: Checkout the repository to test
-      uses: actions/checkout@v4
+      - name: Checkout the repository to test
+        uses: actions/checkout@v4
 
-    - name: Caching
-      uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
+      - name: Caching
+        uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
 
-    - name: Rustfmt
-      shell: bash
-      run: cargo +${NIGHTLY_VERSION} fmt -- --check
+      - name: Rustfmt
+        shell: bash
+        run: cargo +${NIGHTLY_VERSION} fmt -- --check
 
-    - name: Clippy
-      shell: bash
-      run: cargo clippy --workspace --all-targets ${{inputs.clippy_args}} -- -D warnings
+      - name: Clippy
+        shell: bash
+        run: cargo clippy --workspace --all-targets ${{inputs.clippy_args}} -- -D warnings
 
-    - name: Udeps
-      shell: bash
-      run: cargo +${NIGHTLY_VERSION} udeps ${{inputs.udeps_args}}
+      - name: Udeps
+        shell: bash
+        run: cargo +${NIGHTLY_VERSION} udeps ${{inputs.udeps_args}}
 
-    - name: Typos
-      shell: bash
-      run: typos # TODO: Use the typos action
+      - name: Typos
+        shell: bash
+        run: typos # TODO: Use the typos action
 
   rust-tests:
     runs-on: ${{ inputs.runs_on }}
     container: registry.famedly.net/docker-oss/rust-container:nightly
     steps:
-    - name: Checkout workflow dependencies
-      uses: actions/checkout@v4
-      with:
-        repository: famedly/backend-build-workflows
-        ref: ${{ inputs.ref }}
+      - name: Checkout workflow dependencies
+        uses: actions/checkout@v4
+        with:
+          repository: famedly/backend-build-workflows
+          ref: ${{ inputs.ref }}
 
-    - uses: ./.github/actions/rust-prepare
-      with:
-        crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY}}
+      - uses: ./.github/actions/rust-prepare
+        with:
+          crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY}}
 
-    - name: Checkout the repository to test
-      uses: actions/checkout@v4
+      - name: Checkout the repository to test
+        uses: actions/checkout@v4
 
-    - name: Caching
-      uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
+      - name: Caching
+        uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
 
-    - name: Test
-      shell: bash
-      run: cargo llvm-cov nextest --profile ci --workspace --lcov --output-path lcov.info ${{inputs.testcov_args}}
+      - name: Test
+        shell: bash
+        run: cargo llvm-cov nextest --profile ci --workspace --lcov --output-path lcov.info ${{inputs.testcov_args}}
 
-    - name: Doc-test
-      shell: bash
-      if: inputs.run_doctests
-      run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose ${{inputs.test_args}}
+      - name: Doc-test
+        shell: bash
+        if: inputs.run_doctests
+        run: cargo +${NIGHTLY_VERSION} test --doc --workspace --verbose ${{inputs.test_args}}
 
-    - name: Codecov - Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        token: ${{secrets.CODECOV_TOKEN}}
-        files: "lcov.info"
+      - name: Codecov - Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+          files: "lcov.info"
 
-    - name: Codecov - Upload test results
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{secrets.CODECOV_TOKEN}}
+      - name: Codecov - Upload test results
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
