@@ -45,6 +45,10 @@ jobs:
     container: ghcr.io/famedly/rust-container:nightly
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: famedly/backend-build-workflows
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/rust-prepare
         with:
           crate_registry_name: ${{ inputs.crate_registry_name }}
