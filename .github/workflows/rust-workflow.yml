@@ -71,13 +71,7 @@ jobs:
     runs-on: ${{ inputs.runs_on }}
     container: ghcr.io/famedly/rust-container:nightly
     steps:
-      - name: Checkout workflow dependencies
-        uses: actions/checkout@v4
-        with:
-          repository: famedly/backend-build-workflows
-          ref: ${{ inputs.ref }}
-
-      - uses: ./.github/actions/rust-prepare
+      - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v5
         with:
           crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY}}
 
@@ -107,13 +101,7 @@ jobs:
     runs-on: ${{ inputs.runs_on }}
     container: registry.famedly.net/docker-oss/rust-container:nightly
     steps:
-      - name: Checkout workflow dependencies
-        uses: actions/checkout@v4
-        with:
-          repository: famedly/backend-build-workflows
-          ref: ${{ inputs.ref }}
-
-      - uses: ./.github/actions/rust-prepare
+      - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v5
         with:
           crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY}}
 
