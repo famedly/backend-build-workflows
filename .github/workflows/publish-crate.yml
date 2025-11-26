@@ -18,11 +18,9 @@ on:
       crate_registry_name:
         description: "Name of the registry to publish to"
         type: string
-        default: "${{ vars.CRATE_REGISTRY_NAME }}"
       crate_registry_index_url:
         description: "URL of the registry index"
         type: string
-        default: "${{ vars.CRATE_REGISTRY_INDEX_URL }}"
       packages:
         description: "List of packages to publish; space-separated list"
         type: string
@@ -37,6 +35,11 @@ on:
         description: "Auth token for the registry to publish to"
         required: true
 
+# We can use vars as defaults for inputs. This is a little workaround to achieve that.
+env:
+  CRATE_REGISTRY_NAME: ${{ inputs.crate_registry_name || vars.CRATE_REGISTRY_NAME }}
+  CRATE_REGISTRY_INDEX_URL: ${{ inputs.crate_registry_index_url || vars.CRATE_REGISTRY_INDEX_URL }}
+
 jobs:
   publish:
     # Enforce only publishing tagged commits
@@ -47,19 +50,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: famedly/backend-build-workflows/.github/actions/rust-prepare@v5
         with:
-          crate_registry_name: ${{ inputs.crate_registry_name }}
-          crate_registry_index_url: ${{ inputs.crate_registry_index_url }}
+          crate_registry_name: ${{ env.CRATE_REGISTRY_NAME }}
+          crate_registry_index_url: ${{ env.CRATE_REGISTRY_INDEX_URL }}
           crate_registry_ssh_privkey: ${{ secrets.CRATE_REGISTRY_SSH_PRIVKEY}}
       - name: Install registry token
         # Uses `echo` (bash built-in) to prevent leaking the token
         # through CLI args in /proc
         run: |
           cat << EOF > "${CARGO_HOME}/credentials.toml"
-          [${{ inputs.crate_registry_name != 'crates-io' && format('registries.{0}', inputs.crate_registry_name) || 'registry' }}]
+          [${{ env.CRATE_REGISTRY_NAME != 'crates-io' && format('registries.{0}', env.CRATE_REGISTRY_NAME) || 'registry' }}]
           token = "${{ secrets.CRATE_REGISTRY_AUTH_TOKEN }}"
           EOF
       - name: Publish
         run: |
-          cargo publish ${{ inputs.crate_registry_name != 'crates-io' && format('--registry {0}', inputs.crate_registry_name) || '' }} \
+          cargo publish ${{ env.CRATE_REGISTRY_NAME != 'crates-io' && format('--registry {0}', env.CRATE_REGISTRY_NAME) || '' }} \
             ${{ inputs.packages != null && format('--package {0}', inputs.packages) || '' }} \
             ${{ inputs.features != null && format('--features {0}', inputs.features) || '' }}
