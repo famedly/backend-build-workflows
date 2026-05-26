@@ -112,7 +112,7 @@ jobs:
           done
 
       - name: Log into registry ${{ env.OCI_REGISTRY }}
-        uses: famedly/login-action@87baf41dadcc0145026ac21b0b86cf62e43f51e1
+        uses: docker/login-action@2ff7bc63ffa51414f77e9cbeea0d3297c1672d2e
         if: env.OCI_REGISTRY != null
         with:
           registry: ${{ env.OCI_REGISTRY }}
