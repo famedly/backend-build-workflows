@@ -20,7 +20,7 @@ jobs:
         run: sudo apt-get install -y shellcheck
 
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@900f2210b1d28bbbd0bd22d17926b9e224e8f231
 
       - name: Run shellcheck on all shell files
         run: find . \( -name '*.sh' -or -name '*.bash' \) -exec shellcheck --color=always {} +

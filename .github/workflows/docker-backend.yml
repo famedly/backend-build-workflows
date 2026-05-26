@@ -112,7 +112,7 @@ jobs:
           done
 
       - name: Log into registry ${{ env.OCI_REGISTRY }}
-        uses: famedly/login-action@v2
+        uses: famedly/login-action@87baf41dadcc0145026ac21b0b86cf62e43f51e1
         if: env.OCI_REGISTRY != null
         with:
           registry: ${{ env.OCI_REGISTRY }}
