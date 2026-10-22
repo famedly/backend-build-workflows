@@ -36,15 +36,16 @@ if [[ -z "${CRATE_REGISTRY_SSH_PRIVKEY:-}" ]]; then
 	export CRATE_REGISTRY_NAME="crates-io"
 else
 	echo "Private registry credentials detected. Configuring SSH and private registry access."
-	USER_NAME="$(whoami)"
-	SSH_HOME="$(getent passwd "$USER_NAME" | cut -d: -f6)"
 	ssh-agent -a "${SSH_AUTH_SOCK}" > /dev/null
 	echo "SSH_AUTH_SOCK=${SSH_AUTH_SOCK}" >> "$GITHUB_ENV"
 	ssh-add -vvv - <<< "${CRATE_REGISTRY_SSH_PRIVKEY}"$'\n'
-	mkdir -p "$SSH_HOME/.ssh"
-	{
-		ssh-keyscan -H ssh.shipyard.rs
-	} >> "$SSH_HOME/.ssh/known_hosts"
+
+	# Actions containers set HOME to /github/home, which is not always the
+	# passwd home OpenSSH would use by default. Record the host key there
+	# and point git at that file.
+	mkdir -p "${HOME}/.ssh"
+	ssh-keyscan -H ssh.shipyard.rs >> "${HOME}/.ssh/known_hosts"
+	echo "GIT_SSH_COMMAND=ssh -o UserKnownHostsFile=${HOME}/.ssh/known_hosts -o StrictHostKeyChecking=yes" >> "$GITHUB_ENV"
 fi
 
 cat << EOF >> "${HOME}/${CARGO_HOME}/config.toml"
